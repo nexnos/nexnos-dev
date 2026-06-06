@@ -1,0 +1,22 @@
+name: 🏷️ Sync Labels
+
+on:
+  workflow_dispatch:
+    inputs:
+      delete-other-labels:
+        description: '定義にないラベルを削除するか'
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/labels.yml'
+
+jobs:
+  sync:
+    uses: nexnos/.github/.github/workflows/sync-labels.yml@main
+    permissions:
+      issues: write
+    with:
+      delete-other-labels: ${{ inputs.delete-other-labels || false }}
