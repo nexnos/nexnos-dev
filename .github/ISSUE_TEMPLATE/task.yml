@@ -1,0 +1,84 @@
+name: 🔧 Task
+description: "【作業】具体的な実装や対応を行う単位。ブランチ1本・PR1本に対応する。"
+title: "[Task] "
+labels:
+  - "type: task"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔧 Task
+        具体的な実装や対応を行う単位。ブランチ1本・PR1本に対応する。
+
+        > 📝 このテンプレートは開発者向けです。
+
+        ### ⚠️ 運用上の注意
+        - **Sub-issue**：親EpicまたはFeatureをSub-issueとして紐づけること
+        - **Projects**：Layer / Priority / Area を必ず設定すること
+        - **ラベルとLayer**：IssueラベルのtypeとProjectsのLayerを一致させること
+        - **Milestone**：該当するMilestoneを必ず紐づけること
+        - **ブランチ名**：`{prefix}/{kebab-case-description}` の形式で入力する。Issue番号はActionsが自動挿入する。
+
+        | 絵文字 | prefix | 用途 |
+        | --- | --- | --- |
+        | ✨ | `feat` | 新機能 |
+        | 🐛 | `fix` | バグ修正・セキュリティ修正 |
+        | ⚡️ | `perf` | パフォーマンス改善 |
+        | 📦 | `build` | 依存関係・パッケージ・Dockerfile・デプロイ構成の変更 |
+        | ⏪ | `revert` | 変更の取り消し |
+        | 📝 | `docs` | ドキュメントのみの変更 |
+        | ♻️ | `refactor` | リファクタリング・コード削除 |
+        | 💄 | `style` | フォーマット・スタイル変更（動作に影響しない） |
+        | ✅ | `test` | テストの追加・修正 |
+        | 🔧 | `chore` | 設定・ツール・不要ファイル削除 |
+        | 👷 | `ci` | CI/CDの設定変更（現在はGitHub Actions） |
+
+        > prefix選択に迷ったら `docs/COMMIT_CONVENTION.md` を参照すること。
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 🎯 ゴール
+      description: このTaskで何を実装・対応するか。1〜2文で簡潔に。
+      placeholder: 例）Payloadにcommentsコレクションを作成し、payload.config.ts に登録する。
+    validations:
+      required: true
+
+  - type: textarea
+    id: overview
+    attributes:
+      label: 🔍 概要
+      description: ゴールで書ききれない詳細を補足する。任意。
+      placeholder: 例）src/collections/Comments.ts を作成し、payload.config.ts に登録する。型定義も合わせて更新する。
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: ✅ 完了条件
+      description: 何が満たされたらこのTaskを閉じられるか。
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: input
+    id: branch
+    attributes:
+      label: 🌿 ブランチ名
+      description: "{prefix}/{kebab-case-description} の形式で入力する。Issue番号はActionsが自動挿入する。"
+      placeholder: 例）feat/comments-collection
+    validations:
+      required: true
+
+  - type: input
+    id: spec
+    attributes:
+      label: 🔗 仕様書リンク
+      description: 関連する仕様書のパス（リポジトリ内のパス or URL）。任意。
+      placeholder: 例）specs/04_editor.md
+    validations:
+      required: false

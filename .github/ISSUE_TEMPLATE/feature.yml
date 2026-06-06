@@ -1,0 +1,58 @@
+name: ✨ Feature
+description: "【機能】具体的な機能を実現する単位。"
+title: "[Feature] "
+labels:
+  - "type: feature"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ Feature
+        具体的な機能を実現する単位。
+
+        > 📝 このテンプレートは開発者向けです。
+
+        ### ⚠️ 運用上の注意
+        - **Sub-issue**：親EpicをSub-issueとして紐づけること / TaskをSub-issueとして登録すること
+        - **Projects**：Layer / Priority / Area を必ず設定すること
+        - **ラベルとLayer**：IssueラベルのtypeとProjectsのLayerを一致させること
+        - **Milestone**：該当するMilestoneを必ず紐づけること
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 🎯 ゴール
+      description: このFeatureで何を実現するか。1〜2文で簡潔に。
+      placeholder: 例）Payloadにcommentsコレクションを定義し、コメントの投稿・取得・削除ができるようにする。
+    validations:
+      required: true
+
+  - type: textarea
+    id: overview
+    attributes:
+      label: 🔍 概要
+      description: ゴールで書ききれない詳細を補足する。任意。
+      placeholder: 例）src/collections/Comments.ts を作成し、payload.config.ts に登録する。型定義も合わせて更新する。
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: ✅ 完了条件
+      description: 何が満たされたらこのFeatureを閉じられるか。
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: input
+    id: spec
+    attributes:
+      label: 🔗 仕様書リンク
+      description: 関連する仕様書のパス（リポジトリ内のパス or URL）。任意。
+      placeholder: 例）specs/04_editor.md
+    validations:
+      required: false

@@ -1,0 +1,54 @@
+name: 💡 Enhancement
+description: "【改善提案】機能改善・新機能のアイデア・提案。"
+title: "[Enhancement] "
+labels:
+  - "type: enhancement"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 💡 Enhancement
+        機能改善・新機能のアイデア・提案。
+
+        > 📝 このテンプレートは開発者向けです。
+
+        ### ⚠️ 運用上の注意
+        - **このIssueはアイデア・メモ用**：実装することが決定したら新たにEpic/Feature/Taskを起票してこのIssueをクローズすること
+        - **Projects**：Priority / Area を必ず設定すること（Layerは設定不要）
+        - **Milestone**：未定の場合は設定不要
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 🎯 概要
+      description: 何を改善・追加したいか。1〜2文で簡潔に。
+      placeholder: 例）エディタでMarkdownのショートカットキーに対応したい。
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: 🔍 背景・理由
+      description: なぜこの改善・追加が必要か。
+      placeholder: 例）Markdownに慣れたユーザーが直感的に操作できるようにするため。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 💡 提案内容
+      description: 具体的なアイデア・実現方法の案。任意。
+      placeholder: 例）Plate の Markdown plugin を導入し、**bold** や # heading などの記法をリアルタイムで変換する。
+    validations:
+      required: false
+
+  - type: input
+    id: spec
+    attributes:
+      label: 🔗 仕様書リンク
+      description: 関連する仕様書のパス（リポジトリ内のパス or URL）。任意。
+      placeholder: 例）specs/04_editor.md
+    validations:
+      required: false

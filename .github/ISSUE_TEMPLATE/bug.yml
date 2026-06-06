@@ -1,0 +1,96 @@
+name: 🐛 Bug
+description: "【不具合】予期しない動作・エラーの報告。"
+title: "[Bug] "
+labels:
+  - "type: bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug
+        予期しない動作・エラーの報告。
+
+        > 📝 このテンプレートは開発者向けです。
+
+        ### ⚠️ 運用上の注意
+        - **このIssueは管理・追跡用**：実際の修正作業はTaskをSub-issueとして登録すること
+        - **規模の判断**：中・大規模なバグはTaskに分割して管理すること。小規模バグ（1つのTaskで完結）もSub-issueとして登録すること
+        - **Sub-issue**：修正TaskをSub-issueとして紐づけること
+        - **Projects**：Layer / Priority / Area を必ず設定すること
+        - **ラベルとLayer**：IssueラベルのtypeとProjectsのLayerを一致させること
+        - **Milestone**：該当するMilestoneを必ず紐づけること
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 🎯 概要
+      description: 何が起きているか。1〜2文で簡潔に。
+      placeholder: 例）エディタが空のドキュメントを開いたときにクラッシュする。
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔍 再現手順
+      description: バグを再現するための手順を記載する。
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 💡 期待する動作
+      description: 本来どのように動作するべきか。
+      placeholder: 例）空のドキュメントでもエディタが正常に表示される。
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 📋 実際の動作
+      description: 実際にどのような動作・エラーが発生しているか。
+      placeholder: 例）Cannot read properties of undefined (reading 'content') というエラーが発生しクラッシュする。
+    validations:
+      required: true
+
+  - type: input
+    id: branch
+    attributes:
+      label: 🌿 発生ブランチ
+      description: バグが発生したブランチ名。任意。
+      placeholder: 例）main・feat/47-comments-collection
+    validations:
+      required: false
+
+  - type: input
+    id: package
+    attributes:
+      label: 📦 影響パッケージ
+      description: バグが発生したパッケージ。任意。
+      placeholder: 例）packages/cms・packages/editor
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: 🏷️ 発生バージョン
+      description: リリース済みバージョンで発生したバグの場合は記載。開発中のバグは不要。
+      placeholder: 例）v1.1.0
+    validations:
+      required: false
+
+  - type: input
+    id: spec
+    attributes:
+      label: 🔗 仕様書リンク
+      description: 関連する仕様書のパス（リポジトリ内のパス or URL）。任意。
+      placeholder: 例）specs/04_editor.md
+    validations:
+      required: false

@@ -1,0 +1,58 @@
+name: 🗺️ Epic
+description: "【テーマ】複数のFeatureやTaskをまとめた開発テーマの単位。"
+title: "[Epic] "
+labels:
+  - "type: epic"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🗺️ Epic
+        複数のFeatureやTaskをまとめた開発テーマの単位。
+
+        > 📝 このテンプレートは開発者向けです。
+
+        ### ⚠️ 運用上の注意
+        - **Sub-issue**：FeatureまたはTaskをSub-issueとして紐づけること
+        - **Projects**：Layer / Priority / Area を必ず設定すること
+        - **ラベルとLayer**：IssueラベルのtypeとProjectsのLayerを一致させること
+        - **Milestone**：該当するMilestoneを必ず紐づけること
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 🎯 ゴール
+      description: このEpicで何を達成するか。1〜2文で簡潔に。
+      placeholder: 例）NexDocスキーマをPayloadコレクションとして実装し、コンテンツの構造化保存を可能にする。
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: 🔍 背景・理由
+      description: なぜこのEpicが必要か。設計思想や仕様書のどの部分に対応するか。
+      placeholder: 例）Nexnosのコンテンツ設計思想（仕様書 02_data_schema.md）に基づき、HTMLではなく構造化データとしてコンテンツを管理するために必要。
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: ✅ 完了条件
+      description: 何が満たされたらこのEpicを閉じられるか。
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: input
+    id: spec
+    attributes:
+      label: 🔗 仕様書リンク
+      description: 関連する仕様書のパス（リポジトリ内のパス or URL）。任意。
+      placeholder: 例）specs/02_data_schema.md
+    validations:
+      required: false
