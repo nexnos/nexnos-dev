@@ -17,16 +17,16 @@ Nexnosプロジェクトへの参加・貢献に関する規程です。
 
 | ステップ | 内容 | 区分 |
 | --- | --- | :---: |
-| [1. 仕様書作成](../docs/contributing/DEVELOPMENT.md) | 実装前に仕様書（`spec.md`）を作成する | 必須 |
-| [2. Issue設計](../docs/contributing/ISSUE_GUIDE.md) | Epic / Feature / Task の階層でIssueを設計する | 必須 |
-| [3. Issue起票](../docs/contributing/ISSUE_GUIDE.md) | Claude + GitHub MCPによる自動起票を推奨する | 推奨 |
-| [4. ブランチ作成](../docs/contributing/BRANCH_CONVENTION.md) | Task IssueのIssue番号をもとにブランチを作成する | 必須 |
-| [5. 実装・コミット](../docs/contributing/COMMIT_CONVENTION.md) | Claude Codeを推奨。コミットメッセージ規約に従うこと | 必須/推奨 |
-| [6. PR作成](../docs/contributing/PR_GUIDE.md) | Claude Codeを推奨。PRテンプレートに従うこと | 必須/推奨 |
-| [7. セルフレビュー](../docs/contributing/PR_GUIDE.md) | PRテンプレートのチェックリストを確認する | 必須 |
-| [8. Squash merge](../docs/contributing/PR_GUIDE.md) | Commit messageセクションのみ残してマージする | 必須 |
+| [1. 仕様書作成](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/DEVELOPMENT.md) | 実装前に仕様書（`spec.md`）を作成する | 必須 |
+| [2. Issue設計](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/ISSUE_GUIDE.md) | Epic / Feature / Task の階層でIssueを設計する | 必須 |
+| [3. Issue起票](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/ISSUE_GUIDE.md) | Claude + GitHub MCPによる自動起票を推奨する | 推奨 |
+| [4. ブランチ作成](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/BRANCH_CONVENTION.md) | Task IssueのIssue番号をもとにブランチを作成する | 必須 |
+| [5. 実装・コミット](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/COMMIT_CONVENTION.md) | Claude Codeを推奨。コミットメッセージ規約に従うこと | 必須/推奨 |
+| [6. PR作成](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/PR_GUIDE.md) | Claude Codeを推奨。PRテンプレートに従うこと | 必須/推奨 |
+| [7. セルフレビュー](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/PR_GUIDE.md) | PRテンプレートのチェックリストを確認する | 必須 |
+| [8. Squash merge](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/PR_GUIDE.md) | Commit messageセクションのみ残してマージする | 必須 |
 
-> 次期メジャーバージョン開発中は上記フローに加えてメジャーアップデート期間が発生します。詳細は[ブランチ運用規約](../docs/contributing/BRANCH_CONVENTION.md)を参照してください。
+> 次期メジャーバージョン開発中は上記フローに加えてメジャーアップデート期間が発生します。詳細は[ブランチ運用規約](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/BRANCH_CONVENTION.md)を参照してください。
 
 ### 必須・推奨の定義
 
@@ -70,10 +70,10 @@ nexnos-dev/
 
 | ドキュメント | 内容 |
 | --- | --- |
-| [ブランチ運用規約](../docs/contributing/BRANCH_CONVENTION.md) | ブランチの命名規則・運用フロー |
-| [コミットメッセージ規約](../docs/contributing/COMMIT_CONVENTION.md) | コミットメッセージの書き方 |
-| [Issue作成ガイド](../docs/contributing/ISSUE_GUIDE.md) | Issueテンプレートの使い方・階層規約 |
-| [PR作成・マージガイド](../docs/contributing/PR_GUIDE.md) | PRの作成・Squash mergeの手順 |
+| [ブランチ運用規約](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/BRANCH_CONVENTION.md) | ブランチの命名規則・運用フロー |
+| [コミットメッセージ規約](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/COMMIT_CONVENTION.md) | コミットメッセージの書き方 |
+| [Issue作成ガイド](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/ISSUE_GUIDE.md) | Issueテンプレートの使い方・階層規約 |
+| [PR作成・マージガイド](https://github.com/nexnos/nexnos-dev/blob/main/docs/contributing/PR_GUIDE.md) | PRの作成・Squash mergeの手順 |
 | 開発環境セットアップ | 必要なツール・環境構築手順（作成予定） |
 | コードスタイル規約 | コードスタイル・テスト方針（作成予定） |
 
@@ -81,11 +81,11 @@ nexnos-dev/
 
 | ドキュメント | 内容 |
 | --- | --- |
-| [GitHub Actions管理](../docs/maintenance/GITHUB_ACTIONS.md) | ワークフロー・自動化の管理 |
-| [リリース手順](../docs/maintenance/RELEASE.md) | リリースフロー・リリースノート生成 |
+| [GitHub Actions管理](https://github.com/nexnos/nexnos-dev/blob/main/docs/maintenance/GITHUB_ACTIONS.md) | ワークフロー・自動化の管理 |
+| [リリース手順](https://github.com/nexnos/nexnos-dev/blob/main/docs/maintenance/RELEASE.md) | リリースフロー・リリースノート生成 |
 | プロジェクト管理 | Projects・Milestone・ラベルの運用（作成予定） |
 | リポジトリ設定 | リポジトリの初期設定・管理（作成予定） |
-| [OSS公開前チェックリスト](../docs/maintenance/OSS_CHECKLIST.md) | OSS公開前に確認すべき事項 |
+| [OSS公開前チェックリスト](https://github.com/nexnos/nexnos-dev/blob/main/docs/maintenance/OSS_CHECKLIST.md) | OSS公開前に確認すべき事項 |
 
 ## 質問・議論
 
