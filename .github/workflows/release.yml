@@ -48,7 +48,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # フェーズ2：PRマージ時（本体）
-      - name: Publish Core
+      - name: Release Core
         if: |
           github.event_name == 'pull_request' &&
           github.event.pull_request.merged == true &&
@@ -56,11 +56,13 @@ jobs:
         uses: ./.github/actions/release-core
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          app-id: ${{ secrets.APP_ID }}
+          app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
 
       # フェーズ2：PRマージ時（プラグイン）
-      - name: Publish Plugin
+      - name: Release Plugin
         if: |
           github.event_name == 'pull_request' &&
           github.event.pull_request.merged == true &&
@@ -68,11 +70,13 @@ jobs:
         uses: ./.github/actions/release-plugin
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          app-id: ${{ secrets.APP_ID }}
+          app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
 
       # フェーズ2：PRマージ時（テーマ）
-      - name: Publish Theme
+      - name: Release Theme
         if: |
           github.event_name == 'pull_request' &&
           github.event.pull_request.merged == true &&
@@ -80,5 +84,7 @@ jobs:
         uses: ./.github/actions/release-theme
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          app-id: ${{ secrets.APP_ID }}
+          app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}

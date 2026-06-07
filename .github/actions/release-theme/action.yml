@@ -5,6 +5,12 @@ inputs:
   github-token:
     description: 'GitHub Token'
     required: true
+  app-id:
+    description: 'GitHub App ID'
+    required: true
+  app-private-key:
+    description: 'GitHub App Private Key'
+    required: true
   branch:
     description: 'リリースブランチ名'
     required: true
