@@ -8,15 +8,16 @@ on:
         type: choice
         required: true
         options:
+          - ''
           - nexnos
-          - plugin-seo
-          - theme-default
+          - plugin/seo
+          - theme/default
       bump:
         description: 'アップデート種別'
         type: choice
         required: true
-        default: patch
         options:
+          - ''
           - patch
           - minor
           - major
@@ -28,6 +29,13 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ inputs.package }}" ] || [ -z "${{ inputs.bump }}" ]; then
+            echo "::error::パッケージとアップデート種別を選択してください。"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -61,10 +69,10 @@ jobs:
             nexnos)
               VERSION=$(node -p "require('./apps/nexnos/package.json').version")
               ;;
-            plugin-seo)
+            plugin/seo)
               VERSION=$(node -p "require('./plugins/seo/package.json').version")
               ;;
-            theme-default)
+            theme/default)
               VERSION=$(node -p "require('./themes/default/package.json').version")
               ;;
           esac
@@ -83,6 +91,10 @@ jobs:
           esac
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
+          # ブランチ名用にスラッシュをハイフンに変換
+          PACKAGE_SLUG=$(echo "${{ inputs.package }}" | sed 's/\//-/g')
+          echo "package_slug=$PACKAGE_SLUG" >> $GITHUB_OUTPUT
+
       - name: Run changeset version
         run: pnpm changeset version
         env:
@@ -90,23 +102,23 @@ jobs:
 
       - name: Create release branch and PR
         run: |
-          PACKAGE="${{ inputs.package }}"
+          PACKAGE_SLUG="${{ steps.bump_version.outputs.package_slug }}"
           NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
-          BRANCH="release/${PACKAGE}-v${NEW_VERSION}"
+          BRANCH="release/${PACKAGE_SLUG}-v${NEW_VERSION}"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git switch -c "$BRANCH"
           git add -A
-          git commit -m "📦 build(release): release ${PACKAGE} v${NEW_VERSION}"
+          git commit -m "📦 build(release): release ${PACKAGE_SLUG} v${NEW_VERSION}"
           git push origin "$BRANCH"
 
           gh pr create \
-            --title "📦 build(release): release ${PACKAGE} v${NEW_VERSION}" \
+            --title "📦 build(release): release ${PACKAGE_SLUG} v${NEW_VERSION}" \
             --body "## リリース内容
 
-          - **パッケージ**：${PACKAGE}
+          - **パッケージ**：${{ inputs.package }}
           - **バージョン**：v${NEW_VERSION}
           - **種別**：${{ inputs.bump }}
 
