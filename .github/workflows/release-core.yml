@@ -30,7 +30,7 @@ jobs:
           echo "tag=nexnos@${VERSION}" >> $GITHUB_OUTPUT
           echo "maint_branch=maint/nexnos/v${VERSION%%.*}" >> $GITHUB_OUTPUT
 
-      - name: Cherry-pick to maint branch
+      - name: Update maint branch
         run: |
           MAINT="${{ steps.version.outputs.maint_branch }}"
           MERGE_SHA="${{ github.event.pull_request.merge_commit_sha }}"
@@ -38,12 +38,19 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin "$MAINT"
-          git switch "$MAINT"
-          git cherry-pick "$MERGE_SHA" || {
-            echo "cherry-pick failed. Manual intervention required."
-            exit 1
-          }
+          if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+            # 既存のmaintブランチにcherry-pick
+            git fetch origin "$MAINT"
+            git switch "$MAINT"
+            git cherry-pick "$MERGE_SHA" || {
+              echo "cherry-pick failed. Manual intervention required."
+              exit 1
+            }
+          else
+            # 初回リリース：mainから新規作成
+            git switch main
+            git switch -c "$MAINT"
+          fi
           git push origin "$MAINT"
 
       - name: Create tag
