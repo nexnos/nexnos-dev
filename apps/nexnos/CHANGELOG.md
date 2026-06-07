@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.1.3
+
+### Patch Changes
+
+- d8bbc96: fix(cms): add third dummy change for release flow test
+
 ## 0.1.2
 
 ### Patch Changes
