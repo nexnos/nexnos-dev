@@ -1,5 +1,15 @@
 # nexnos
 
+## 0.2.0
+
+### Minor Changes
+
+- ✨ feat(editor): add markdown shortcuts to editor
+
+### Patch Changes
+
+- 🐛 fix(cms): resolve null reference in comments collection
+
 ## 0.1.3
 
 ### Patch Changes
