@@ -1,0 +1,95 @@
+name: 🚀 Release Plugin
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  release:
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/plugin-')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Extract plugin name and version from branch name
+        id: version
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          # release/plugin-seo-v1.1.0 → plugin-seo / 1.1.0
+          BRANCH_BODY="${BRANCH#release/}"
+          VERSION="${BRANCH_BODY##*-v}"
+          PLUGIN_NAME="${BRANCH_BODY%-v*}"
+          echo "plugin=$PLUGIN_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=${PLUGIN_NAME}@${VERSION}" >> $GITHUB_OUTPUT
+          echo "maint_branch=maint/${PLUGIN_NAME}/v${VERSION%%.*}" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cherry-pick to maint branch
+        run: |
+          MAINT="${{ steps.version.outputs.maint_branch }}"
+          MERGE_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin "$MAINT"
+          git switch "$MAINT"
+          git cherry-pick "$MERGE_SHA" || {
+            echo "cherry-pick failed. Manual intervention required."
+            exit 1
+          }
+          git push origin "$MAINT"
+
+      - name: Create tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git switch main
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Build plugin
+        run: |
+          PLUGIN="${{ steps.version.outputs.plugin }}"
+          cd "plugins/${PLUGIN#plugin-}"
+          pnpm build
+
+      - name: Create ZIP package
+        run: |
+          PLUGIN="${{ steps.version.outputs.plugin }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_NAME="${PLUGIN}-v${VERSION}.zip"
+          cd "plugins/${PLUGIN#plugin-}"
+          zip -r "../../${ZIP_NAME}" dist/ plugin.json
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+        id: zip
+
+      - name: Sync to product repository and create release
+        run: |
+          echo "TODO: Sync to nexnos/${PLUGIN} repository"
+          echo "TODO: Create GitHub Release with ZIP"
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

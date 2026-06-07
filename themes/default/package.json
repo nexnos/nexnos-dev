@@ -1,0 +1,8 @@
+{
+  "name": "theme-default",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "echo 'build theme-default'",
+    "dev": "echo 'dev theme-default'"
+  }
+}
