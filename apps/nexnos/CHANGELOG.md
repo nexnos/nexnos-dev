@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.2
+
+### Patch Changes
+
+- 🔧 chore(config): test composite actions release flow
+
 ## 0.2.1
 
 ### Patch Changes
