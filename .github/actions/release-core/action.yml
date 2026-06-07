@@ -1,0 +1,66 @@
+name: 'Release Core'
+description: '本体リリース：maintブランチ更新・タグ作成・製品リポジトリ同期・Dockerイメージビルド'
+
+inputs:
+  github-token:
+    description: 'GitHub Token'
+    required: true
+  branch:
+    description: 'リリースブランチ名'
+    required: true
+  merge-commit-sha:
+    description: 'マージコミットのSHA'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract version from branch name
+      id: version
+      shell: bash
+      run: |
+        BRANCH="${{ inputs.branch }}"
+        VERSION="${BRANCH#release/nexnos-v}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=nexnos@${VERSION}" >> $GITHUB_OUTPUT
+        echo "maint_branch=maint/nexnos/v${VERSION%%.*}" >> $GITHUB_OUTPUT
+
+    - name: Update maint branch
+      shell: bash
+      run: |
+        MAINT="${{ steps.version.outputs.maint_branch }}"
+        MERGE_SHA="${{ inputs.merge-commit-sha }}"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+          git fetch origin "$MAINT"
+          git switch "$MAINT"
+          git cherry-pick "$MERGE_SHA" || {
+            echo "::error::cherry-pick failed. Manual intervention required."
+            exit 1
+          }
+        else
+          git switch main
+          git switch -c "$MAINT"
+        fi
+        git push origin "$MAINT"
+
+    - name: Create tag
+      shell: bash
+      run: |
+        TAG="${{ steps.version.outputs.tag }}"
+        git switch main
+        git tag "$TAG"
+        git push origin "$TAG"
+
+    - name: Sync to product repository
+      shell: bash
+      run: |
+        echo "TODO: Sync to nexnos/nexnos repository"
+
+    - name: Build Docker image
+      shell: bash
+      run: |
+        echo "TODO: Build and push Docker image"

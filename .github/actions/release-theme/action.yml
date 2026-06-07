@@ -1,0 +1,97 @@
+name: 'Release Theme'
+description: 'テーマリリース：maintブランチ更新・タグ作成・ビルド・ZIP生成・製品リポジトリ同期'
+
+inputs:
+  github-token:
+    description: 'GitHub Token'
+    required: true
+  branch:
+    description: 'リリースブランチ名'
+    required: true
+  merge-commit-sha:
+    description: 'マージコミットのSHA'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract theme name and version from branch name
+      id: version
+      shell: bash
+      run: |
+        BRANCH="${{ inputs.branch }}"
+        BRANCH_BODY="${BRANCH#release/}"
+        VERSION="${BRANCH_BODY##*-v}"
+        THEME_NAME="${BRANCH_BODY%-v*}"
+        echo "theme=$THEME_NAME" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${THEME_NAME}@${VERSION}" >> $GITHUB_OUTPUT
+        echo "maint_branch=maint/${THEME_NAME}/v${VERSION%%.*}" >> $GITHUB_OUTPUT
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --no-frozen-lockfile
+
+    - name: Update maint branch
+      shell: bash
+      run: |
+        MAINT="${{ steps.version.outputs.maint_branch }}"
+        MERGE_SHA="${{ inputs.merge-commit-sha }}"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+          git fetch origin "$MAINT"
+          git switch "$MAINT"
+          git cherry-pick "$MERGE_SHA" || {
+            echo "::error::cherry-pick failed. Manual intervention required."
+            exit 1
+          }
+        else
+          git switch main
+          git switch -c "$MAINT"
+        fi
+        git push origin "$MAINT"
+
+    - name: Create tag
+      shell: bash
+      run: |
+        TAG="${{ steps.version.outputs.tag }}"
+        git switch main
+        git tag "$TAG"
+        git push origin "$TAG"
+
+    - name: Build theme
+      shell: bash
+      run: |
+        THEME="${{ steps.version.outputs.theme }}"
+        cd "themes/${THEME#theme-}"
+        pnpm build
+
+    - name: Create ZIP package
+      id: zip
+      shell: bash
+      run: |
+        THEME="${{ steps.version.outputs.theme }}"
+        VERSION="${{ steps.version.outputs.version }}"
+        ZIP_NAME="${THEME}-v${VERSION}.zip"
+        cd "themes/${THEME#theme-}"
+        zip -r "../../${ZIP_NAME}" dist/ plugin.json
+        echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+
+    - name: Sync to product repository and create release
+      shell: bash
+      run: |
+        echo "TODO: Sync to nexnos/${THEME} repository"
+        echo "TODO: Create GitHub Release with ZIP"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
