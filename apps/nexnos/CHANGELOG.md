@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.1
+
+### Patch Changes
+
+- 🐛 fix(cms): test PR link in changelog ([#5](https://github.com/nexnos/nexnos-dev/pull/5))
+
 ## 0.2.0
 
 ### Minor Changes
