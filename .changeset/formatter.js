@@ -1,21 +1,22 @@
 // .changeset/formatter.js
-// Type別にCHANGELOGセクションを分類するカスタムフォーマッター
+// @changesets/changelog-github をベースにType別セクション分類・絵文字付きタイトルを実装
+
+const githubChangelog = require("@changesets/changelog-github");
 
 const SECTIONS = [
-  { type: "feat",     title: "### ✨ Added" },
-  { type: "fix",      title: "### 🐛 Fixed" },
-  { type: "perf",     title: "### ⚡️ Performance" },
-  { type: "build",    title: "### 📦 Build" },
-  { type: "revert",   title: "### ⏪ Reverted" },
-  { type: "docs",     title: "### 📝 Docs" },
-  { type: "refactor", title: "### ♻️ Refactored" },
+  { type: "feat",     emoji: "✨", title: "### ✨ Added" },
+  { type: "fix",      emoji: "🐛", title: "### 🐛 Fixed" },
+  { type: "perf",     emoji: "⚡️", title: "### ⚡️ Performance" },
+  { type: "build",    emoji: "📦", title: "### 📦 Build" },
+  { type: "revert",   emoji: "⏪", title: "### ⏪ Reverted" },
+  { type: "docs",     emoji: "📝", title: "### 📝 Docs" },
+  { type: "refactor", emoji: "♻️", title: "### ♻️ Refactored" },
 ];
 
-// style・test・chore・ci は除外
 const EXCLUDE_TYPES = ["style", "test", "chore", "ci"];
 
 /**
- * changesetのsummaryからTypeを抽出する
+ * summaryからTypeを抽出する
  * 例）"feat(editor): add markdown shortcuts" → "feat"
  */
 function extractType(summary) {
@@ -24,71 +25,63 @@ function extractType(summary) {
 }
 
 /**
- * PR番号からGitHubリンクを生成する
+ * TypeからGitmojiを取得する
  */
-function getPrLink(pullRequestNumber, repoUrl) {
-  if (!pullRequestNumber || !repoUrl) return "";
-  return ` ([#${pullRequestNumber}](${repoUrl}/pull/${pullRequestNumber}))`;
+function getEmoji(type) {
+  const section = SECTIONS.find((s) => s.type === type);
+  return section ? section.emoji : "";
 }
 
-async function getReleaseLine(changeset, _type, options) {
-  const repoUrl = options?.repo
-    ? `https://github.com/${options.repo}`
-    : "https://github.com/nexnos/nexnos-dev";
+async function getReleaseLine(changeset, type, options) {
+  // @changesets/changelog-github からPR番号リンクを取得
+  const githubLine = await githubChangelog.default.getReleaseLine(
+    changeset,
+    type,
+    options
+  );
 
-  const prLink = getPrLink(changeset.id, repoUrl);
+  if (!githubLine) return null;
+
   const summary = changeset.summary.trim();
-  const type = extractType(summary);
+  const commitType = extractType(summary);
 
-  // 除外Typeはnullを返す（CHANGELOGに掲載しない）
-  if (type && EXCLUDE_TYPES.includes(type)) return null;
+  // 除外Typeはnullを返す
+  if (commitType && EXCLUDE_TYPES.includes(commitType)) return null;
 
-  return `- ${summary}${prLink}`;
+  // githubLineからコミットハッシュを除去してPR番号リンクを抽出
+  // githubLineの形式: "- abcd123: summary ([#47](url))"
+  // または: "- summary ([#47](url))"
+  const prLinkMatch = githubLine.match(/(\[#\d+\]\(https:\/\/[^)]+\))/);
+  const prLink = prLinkMatch ? ` (${prLinkMatch[1]})` : "";
+
+  // 絵文字を付与
+  const emoji = getEmoji(commitType);
+  const emojiPrefix = emoji ? `${emoji} ` : "";
+
+  return `- ${emojiPrefix}${summary}${prLink}`;
 }
 
-async function getDependencyReleaseLine() {
+async function getDependencyReleaseLine(changesets, dependenciesUpdated, options) {
   return null;
 }
 
 /**
- * バージョンのCHANGELOGエントリを生成する
+ * Type別にグループ化してCHANGELOGセクションを生成する
  */
 async function getChangelogEntry(changeset, options) {
   const lines = await Promise.all(
-    changeset.releases.map((release) =>
-      getReleaseLine(
-        { ...changeset, summary: changeset.summary },
-        release.type,
-        options
-      )
+    changeset.releases.map(() =>
+      getReleaseLine(changeset, changeset.releases[0]?.type, options)
     )
   );
 
   const validLines = lines.filter(Boolean);
   if (validLines.length === 0) return "";
 
-  // Typeごとにグループ化
-  const groups = {};
-  for (const line of validLines) {
-    const match = line.match(/^- (\w+)[\(:]/);
-    const type = match ? match[1] : "other";
-    if (!groups[type]) groups[type] = [];
-    groups[type].push(line);
-  }
-
-  // セクション順に並べて出力
-  const sections = [];
-  for (const { type, title } of SECTIONS) {
-    if (groups[type]?.length) {
-      sections.push(`${title}\n${groups[type].join("\n")}`);
-    }
-  }
-
-  return sections.join("\n\n");
+  return validLines.join("\n");
 }
 
 module.exports = {
   getReleaseLine,
   getDependencyReleaseLine,
-  getChangelogEntry,
 };
