@@ -1,5 +1,16 @@
 # nexnos
 
+## 0.4.0
+
+### Minor Changes
+
+- ✨ feat(cms): test maint branch trigger for phase2
+
+### Patch Changes
+
+- 🐛 fix(cms): test hotfix phase2 trigger ([#20](https://github.com/nexnos/nexnos-dev/pull/20))
+- 🐛 fix(cms): test hotfix auto-release flow ([#18](https://github.com/nexnos/nexnos-dev/pull/18))
+
 ## 0.3.0
 
 ### Minor Changes
