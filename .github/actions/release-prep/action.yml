@@ -121,7 +121,9 @@ runs:
         ${CHANGELOG_BODY}
 
         ---
-        このPRをmainにマージするとリリースフローが自動実行されます。" \
+        このPRをmainにマージするとリリースフローが自動実行されます。
+
+        <!-- release-meta: create-pr=${{ inputs.create-pr }} -->" \
           --base main \
           --head "$BRANCH"
       env:

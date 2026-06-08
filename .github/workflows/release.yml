@@ -21,6 +21,10 @@ on:
           - patch
           - minor
           - major
+      create-pr:
+        description: '製品リポジトリへの同期をPR経由で行う'
+        type: boolean
+        default: true
   pull_request:
     types: [closed]
     branches:
@@ -47,6 +51,16 @@ jobs:
           bump: ${{ inputs.bump }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # フェーズ2：PR本文からメタ情報を取得
+      - name: Extract release meta
+        id: meta
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+        shell: bash
+        run: |
+          BODY="${{ github.event.pull_request.body }}"
+          CREATE_PR=$(echo "$BODY" | grep -oP '(?<=<!-- release-meta: create-pr=).*?(?= -->)' || echo 'true')
+          echo "create-pr=$CREATE_PR" >> $GITHUB_OUTPUT
+
       # フェーズ2：PRマージ時（本体）
       - name: Release Core
         if: |
@@ -60,6 +74,8 @@ jobs:
           app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
+          pr-body: ${{ github.event.pull_request.body }}
+          create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
 
       # フェーズ2：PRマージ時（プラグイン）
       - name: Release Plugin
@@ -74,6 +90,8 @@ jobs:
           app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
+          pr-body: ${{ github.event.pull_request.body }}
+          create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
 
       # フェーズ2：PRマージ時（テーマ）
       - name: Release Theme
@@ -88,3 +106,5 @@ jobs:
           app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
+          pr-body: ${{ github.event.pull_request.body }}
+          create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
