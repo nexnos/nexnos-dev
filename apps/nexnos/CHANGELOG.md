@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.5.0
+
+### Minor Changes
+
+- ✨ feat(cms): test minor release with fixed maint update
+
 ## 0.4.0
 
 ### Minor Changes
