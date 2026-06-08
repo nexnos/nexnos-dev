@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.10
+
+### Patch Changes
+
+- 🔧 chore(config): test fixed PR body format
+
 ## 0.2.9
 
 ### Patch Changes
