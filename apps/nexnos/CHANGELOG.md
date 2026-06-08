@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.3
+
+### Patch Changes
+
+- 🔧 chore(config): test product repository sync
+
 ## 0.2.2
 
 ### Patch Changes
