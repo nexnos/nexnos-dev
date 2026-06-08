@@ -1,5 +1,11 @@
 # nexnos
 
+## 1.1.0
+
+### Minor Changes
+
+- ✨ feat(cms): test issue link in changelog ([#99](https://github.com/nexnos/nexnos-dev/issues/99))
+
 ## 1.0.0
 
 ### Major Changes
