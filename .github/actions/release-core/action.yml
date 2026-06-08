@@ -44,14 +44,22 @@ runs:
           git fetch origin "$MAINT"
           git switch "$MAINT"
           git cherry-pick "$MERGE_SHA" || {
-            echo "::error::cherry-pick failed. Manual intervention required."
-            exit 1
+            # 空のcherry-pickはスキップ（既に同じ内容が含まれている場合）
+            if git cherry-pick --skip 2>/dev/null; then
+              echo "cherry-pick was empty, skipped."
+            else
+              echo "::error::cherry-pick failed. Manual intervention required."
+              git cherry-pick --abort || true
+              git switch main
+              exit 1
+            fi
           }
         else
-          git switch main
           git switch -c "$MAINT"
         fi
         git push origin "$MAINT"
+        # 常にmainに戻る
+        git switch main
 
     - name: Create tag
       shell: bash
