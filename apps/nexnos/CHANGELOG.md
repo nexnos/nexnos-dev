@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.3.1
+
+### Patch Changes
+
+- 536b414: 🐛 fix(cms): test hotfix auto-release flow
+
 ## 0.3.0
 
 ### Minor Changes
