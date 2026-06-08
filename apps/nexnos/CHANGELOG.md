@@ -1,5 +1,11 @@
 # nexnos
 
+## 1.4.0
+
+### Minor Changes
+
+- ✨ feat(cms): test GitHub Releases with fixed action ([#99](https://github.com/nexnos/nexnos-dev/issues/99))
+
 ## 1.3.0
 
 ### Minor Changes
