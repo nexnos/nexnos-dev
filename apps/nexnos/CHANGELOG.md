@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.7
+
+### Patch Changes
+
+- 🔧 chore(config): test PR-based product sync
+
 ## 0.2.6
 
 ### Patch Changes
