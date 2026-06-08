@@ -50,6 +50,7 @@ jobs:
           package: ${{ inputs.package }}
           bump: ${{ inputs.bump }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          create-pr: ${{ inputs.create-pr }}
 
       # フェーズ2：PR本文からメタ情報を取得
       - name: Extract release meta

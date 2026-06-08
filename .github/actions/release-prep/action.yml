@@ -11,6 +11,10 @@ inputs:
   github-token:
     description: 'GitHub Token'
     required: true
+  create-pr:
+    description: '製品リポジトリへの同期をPR経由で行う'
+    required: false
+    default: 'true' 
 
 runs:
   using: 'composite'
