@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.5
+
+### Patch Changes
+
+- 🔧 chore(config): test product sync with rsync fix
+
 ## 0.2.4
 
 ### Patch Changes
