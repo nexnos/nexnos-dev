@@ -86,7 +86,7 @@ runs:
         git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/nexnos/nexnos.git "$PRODUCT_DIR"
 
         # apps/nexnos/ の内容を製品リポジトリにコピー
-        rsync -av --delete apps/nexnos/ "$PRODUCT_DIR/"
+        rsync -av --delete --exclude=".git" apps/nexnos/ "$PRODUCT_DIR/"
 
         # コミット・push
         cd "$PRODUCT_DIR"
