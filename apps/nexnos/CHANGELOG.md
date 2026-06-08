@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.3.2
+
+### Patch Changes
+
+- f8935ad: 🐛 fix(cms): test hotfix phase2 trigger
+
 ## 0.3.1
 
 ### Patch Changes
