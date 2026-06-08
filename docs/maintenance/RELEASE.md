@@ -1,0 +1,195 @@
+# リリース手順
+
+Nexnosプロジェクトにおけるリリースフローと管理方針を定めたドキュメントです。
+リリース作業時に必ず従ってください。
+
+## 目次 <!-- omit in toc -->
+
+- [バージョニングポリシー](#バージョニングポリシー)
+- [リリースフロー](#リリースフロー)
+- [CHANGELOG・リリースノートの自動化](#changelogリリースノートの自動化)
+
+## バージョニングポリシー
+
+Semantic Versioning（`v{major}.{minor}.{patch}`）に従う。
+
+| バージョン | 更新タイミング | 例 |
+| --- | --- | --- |
+| `major` | BREAKING CHANGEを含むリリース | `v1.x.x` → `v2.0.0` |
+| `minor` | 後方互換性のある機能追加 | `v1.0.x` → `v1.1.0` |
+| `patch` | 後方互換性のあるバグ修正（hotfixのみ） | `v1.0.0` → `v1.0.1` |
+
+### 重要なルール
+
+- **BREAKING CHANGEはメジャーアップデートに含めること**
+- **マイナーアップデートは後方互換性を維持すること**
+- **patchはhotfixによるバグ修正のみとし機能追加は含めないこと**
+- **hotfixは即時パッチリリースとし、ため込まないこと**
+
+### バージョン管理方法
+
+- バージョンはTagで管理する（ブランチは増やさない）
+- Tagは`maint/vX`ブランチ上に打つ
+- 詳細は[ブランチ運用規約](../contributing/BRANCH_CONVENTION.md)を参照
+
+### リリースブランチの起点
+
+| bump | 起点 | 理由 |
+| --- | --- | --- |
+| `major` | `main` | next→mainマージ後の全変更を含む |
+| `minor` | `main` | Milestoneルールにより未リリースコードはmainに入らない |
+| `patch` | `maint/vX` | hotfix cherry-pick済みのmaint/vXからのみ作成することでhotfixだけを含むリリースを保証 |
+
+## リリースフロー
+
+リリース作業はGitHub Actionsで自動化する。
+
+### ワークフロー構成
+
+```text
+.github/
+├── workflows/
+│   └── release.yml              ← リリースの唯一の窓口
+└── actions/
+    ├── release-prep/            ← フェーズ1共通処理（minor/major）
+    ├── release-core/            ← 本体リリース処理
+    ├── release-plugin/          ← プラグインリリース処理
+    └── release-theme/           ← テーマリリース処理
+```
+
+`release.yml` はトリガーを判断して適切なアクションを呼び出す窓口として機能する。
+
+### トリガーの種類
+
+| トリガー | 種別 | 処理 |
+| --- | --- | --- |
+| `workflow_dispatch` | 手動実行 | minor/majorリリースのフェーズ1 |
+| `hotfix/`ブランチのPRマージ | 自動 | patchリリースのフェーズ1（自動起動） |
+| `release/`ブランチのPRマージ | 自動 | フェーズ2（タグ・製品リポジトリ同期） |
+
+### マイナー/メジャーリリース
+
+#### フェーズ1：リリース準備（手動トリガー）
+
+```text
+1. release.yml を手動実行する
+   - パッケージを選択する（nexnos / plugin/seo / theme/default）
+   - アップデート種別を選択する（minor / major）
+   - 製品リポジトリをPR経由で同期するか選択する（デフォルト：ON）
+2. Actionsが自動で以下を実行する：
+   a. major：mainから / minor：mainからrelease/ブランチを作成する
+   b. pnpm changeset version でバージョン番号を自動採番する
+   c. CHANGELOG.mdを自動更新する
+   d. package.jsonのバージョン番号を自動更新する
+   e. 変更をコミットしてmainへのPRを自動作成する
+3. PRの内容（変更内容・バージョン）を確認する
+4. PRをmainにマージする
+```
+
+#### フェーズ2：リリース（PRマージ自動トリガー）
+
+```text
+release/ブランチのPRがmainにマージされると自動で以下を実行する：
+  1. maint/vXにcherry-pickする（初回は新規作成）
+  2. mainにリリース作業コミットをcherry-pickする（CHANGELOG・バージョン同期）
+  3. タグを自動作成する（例：nexnos@1.1.0）
+  4. 製品リポジトリへソースコードを同期する
+     - PR経由（デフォルト）またはmainへ直接push
+  5. GitHub Releasesにリリースノートを自動公開する（作成予定）
+```
+
+### パッチリリース（hotfix）
+
+#### フロー概要
+
+```text
+1. mainからhotfix/ブランチを作成して修正する
+2. changesetファイルを作成する（Claude Codeが自動生成）
+3. PRをmainにマージする
+4. Actionsが自動で以下を実行する（フェーズ1）：
+   a. maint/vXにhotfixをcherry-pickする
+   b. maint/vXからrelease/ブランチを作成する
+   c. pnpm changeset version でバージョン番号を自動採番する
+   d. CHANGELOG.mdを自動更新する
+   e. package.jsonのバージョン番号を自動更新する
+   f. 変更をコミットしてmaint/vXへのPRを自動作成する
+5. PRの内容を確認してmaint/vXにマージする
+6. フェーズ2が自動実行される（タグ・製品リポジトリ同期）
+```
+
+> ため込まず即時リリースを原則とする。複数hotfixが発生した場合も個別にパッチリリースを行う。
+
+### メジャーリリース（v1.x.x → v2.0.0）
+
+```text
+1. メジャーアップデート期間の作業を完了する（BRANCH_CONVENTION.md参照）
+2. nextをmainにマージする
+3. release.yml を手動実行する
+   - パッケージを選択する
+   - アップデート種別：major
+4. PRの内容を確認・編集してmainにマージする
+5. フェーズ2が自動実行される
+   - maint/v2が新規作成される
+   - タグ nexnos@2.0.0 が作成される
+   - 製品リポジトリへ同期される
+6. nextブランチを削除する
+7. release.yml の options に v2 を追加・default を v2 に変更する
+8. 旧maint/v1のサポート終了を告知する（OSS公開後）
+```
+
+## CHANGELOG・リリースノートの自動化
+
+Changesetsを採用する。
+
+### 採用方式の選定理由
+
+| 方式 | 採用 | 理由 |
+| --- | :---: | --- |
+| Changesets | ✅ | モノレポ対応・パッケージ別CHANGELOG・Claude Codeとの相性良好 |
+| PRタイトル収集（GitHub Actions） | ❌ | モノレポでのパッケージ別フィルタリングが複雑 |
+| semantic-release | ❌ | LTS Release Branch Flowとの相性が悪い |
+
+### changesetファイルの作成
+
+コード変更のたびにchangesetファイルを作成する。Claude Codeが自動生成する。
+
+```markdown
+<!-- .changeset/add-markdown-shortcuts.md -->
+---
+"nexnos": minor
+---
+
+✨ feat(editor): add markdown shortcuts to editor
+```
+
+### CHANGELOG.mdのフォーマット
+
+```markdown
+## 1.1.0
+
+### Minor Changes
+
+- ✨ feat(editor): add markdown shortcuts to editor ([#47](https://github.com/nexnos/nexnos-dev/pull/47))
+
+### Patch Changes
+
+- 🐛 fix(cms): resolve null reference in comments collection ([#52](https://github.com/nexnos/nexnos-dev/pull/52))
+```
+
+### Type別の掲載ルール
+
+changesetのsummaryに記載したTypeでセクションを判断する。
+
+| Type | リリースノート | セクション名 |
+| --- | :---: | --- |
+| `feat` | ✅ 掲載 | ✨ Added |
+| `fix` | ✅ 掲載 | 🐛 Fixed |
+| `perf` | ✅ 掲載 | ⚡️ Performance |
+| `build` | ✅ 掲載 | 📦 Build |
+| `revert` | ✅ 掲載 | ⏪ Reverted |
+| `docs` | 🔺 任意 | 📝 Docs |
+| `refactor` | 🔺 任意 | ♻️ Refactored |
+| `style` | ❌ 除外 | - |
+| `test` | ❌ 除外 | - |
+| `chore` | ❌ 除外 | - |
+| `ci` | ❌ 除外 | - |
