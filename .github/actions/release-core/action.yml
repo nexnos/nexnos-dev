@@ -240,6 +240,27 @@ runs:
       env:
         GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
+    - name: Create GitHub Release (Draft)
+      shell: bash
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        RELEASE_DATE=$(date +"%Y/%m/%d")
+
+        # CHANGELOGから該当バージョンの変更内容を抽出
+        CHANGELOG="apps/${{ inputs.package }}/CHANGELOG.md"
+        CHANGELOG_BODY=$(awk "/^## ${VERSION}/{found=1; next} found && /^## /{exit} found{print}" "$CHANGELOG")
+
+        # 製品リポジトリにドラフトリリースを作成
+        gh release create "v${VERSION}" \
+          --repo nexnos/nexnos \
+          --draft \
+          --title "nexnos v${VERSION} (${RELEASE_DATE})" \
+          --notes "## nexnos v${VERSION} (${RELEASE_DATE})
+
+${CHANGELOG_BODY}"
+      env:
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
     - name: Build Docker image
       shell: bash
       run: |
