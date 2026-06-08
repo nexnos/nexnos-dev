@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.8
+
+### Patch Changes
+
+- 🔧 chore(config): test PR sync option fix
+
 ## 0.2.7
 
 ### Patch Changes
