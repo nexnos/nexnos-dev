@@ -1,0 +1,6 @@
+# .releaseignore
+# 製品リポジトリへの同期時に除外するファイル・ディレクトリ
+# rsync の --exclude オプションに渡される
+
+.github/
+.gitignore
