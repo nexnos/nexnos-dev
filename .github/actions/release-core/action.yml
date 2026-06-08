@@ -21,6 +21,26 @@ inputs:
     description: '開発リポジトリのリリースPR本文'
     required: false
     default: ''
+  pr-number:
+    description: '開発リポジトリのリリースPR番号'
+    required: false
+    default: ''
+  package:
+    description: 'リリース対象パッケージ'
+    required: false
+    default: ''
+  old-version:
+    description: 'リリース前のバージョン'
+    required: false
+    default: ''
+  new-version:
+    description: 'リリース後のバージョン'
+    required: false
+    default: ''
+  bump:
+    description: 'アップデート種別'
+    required: false
+    default: ''
   create-pr:
     description: '製品リポジトリへの同期をPR経由で行う'
     required: false
@@ -52,7 +72,6 @@ runs:
           git fetch origin "$MAINT"
           git switch "$MAINT"
           git cherry-pick "$MERGE_SHA" || {
-            # 空のcherry-pickはスキップ（既に同じ内容が含まれている場合）
             if git cherry-pick --skip 2>/dev/null; then
               echo "cherry-pick was empty, skipped."
             else
@@ -66,7 +85,6 @@ runs:
           git switch -c "$MAINT"
         fi
         git push origin "$MAINT"
-        # 常にmainに戻る
         git switch main
 
     - name: Create tag
@@ -91,9 +109,14 @@ runs:
       shell: bash
       run: |
         VERSION="${{ steps.version.outputs.version }}"
-        TAG="${{ steps.version.outputs.tag }}"
+        BRANCH="${{ inputs.branch }}"
         PRODUCT_DIR="${{ github.workspace }}/../nexnos-product"
         CREATE_PR="${{ inputs.create-pr }}"
+        PR_NUMBER="${{ inputs.pr-number }}"
+        PACKAGE="${{ inputs.package }}"
+        OLD_VERSION="${{ inputs.old-version }}"
+        NEW_VERSION="${{ inputs.new-version }}"
+        BUMP="${{ inputs.bump }}"
 
         # 製品リポジトリをclone
         git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/nexnos/nexnos.git "$PRODUCT_DIR"
@@ -101,7 +124,6 @@ runs:
         # apps/nexnos/ の内容を製品リポジトリにコピー
         rsync -av --delete --exclude=".git" apps/nexnos/ "$PRODUCT_DIR/"
 
-        # コミット・push
         cd "$PRODUCT_DIR"
         git config user.name "nexnos-bot[bot]"
         git config user.email "nexnos-bot[bot]@users.noreply.github.com"
@@ -114,17 +136,19 @@ runs:
           git diff --staged --quiet || git commit -m "📦 build(release): release nexnos v${VERSION}"
           git push origin "$SYNC_BRANCH"
 
-          # pr-bodyから変更内容セクションのみ抽出（リリース内容・メタデータを除く）
+          # pr-bodyから変更内容セクションのみ抽出
           PR_BODY="${{ inputs.pr-body }}"
           CHANGES=$(echo "$PR_BODY" | awk "/^## 変更内容/{found=1; next} found && /^---/{exit} found && /^<!-- release-meta/{exit} found{print}")
+          PR_LINK="https://github.com/nexnos/nexnos-dev/pull/${PR_NUMBER}"
 
           gh pr create \
             --title "📦 build(release): release nexnos v${VERSION}" \
             --body "## リリース内容
 
-          - **バージョン**：v${VERSION}
-          - **開発リポジトリ**：nexnos/nexnos-dev
-          - **タグ**：${TAG}
+          - **パッケージ**：${PACKAGE}
+          - **バージョン**：v${OLD_VERSION} → v${NEW_VERSION}
+          - **種別**：${BUMP}
+          - **開発リポジトリPR**：[#${PR_NUMBER}](${PR_LINK})
 
           ## 変更内容
 

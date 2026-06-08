@@ -14,7 +14,7 @@ inputs:
   create-pr:
     description: '製品リポジトリへの同期をPR経由で行う'
     required: false
-    default: 'true' 
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -93,6 +93,7 @@ runs:
       shell: bash
       run: |
         PACKAGE_SLUG="${{ steps.bump_version.outputs.package_slug }}"
+        OLD_VERSION="${{ steps.current_version.outputs.version }}"
         NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
         BRANCH="release/${PACKAGE_SLUG}-v${NEW_VERSION}"
 
@@ -117,7 +118,7 @@ runs:
           --body "## リリース内容
 
         - **パッケージ**：${{ inputs.package }}
-        - **バージョン**：v${NEW_VERSION}
+        - **バージョン**：v${OLD_VERSION} → v${NEW_VERSION}
         - **種別**：${{ inputs.bump }}
 
         ## 変更内容
@@ -127,7 +128,7 @@ runs:
         ---
         このPRをmainにマージするとリリースフローが自動実行されます。
 
-        <!-- release-meta: create-pr=${{ inputs.create-pr }} -->" \
+        <!-- release-meta: create-pr=${{ inputs.create-pr }} package=${{ inputs.package }} old-version=${OLD_VERSION} new-version=${NEW_VERSION} bump=${{ inputs.bump }} -->" \
           --base main \
           --head "$BRANCH"
       env:

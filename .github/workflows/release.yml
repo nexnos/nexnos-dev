@@ -59,8 +59,17 @@ jobs:
         shell: bash
         run: |
           BODY="${{ github.event.pull_request.body }}"
-          CREATE_PR=$(echo "$BODY" | grep -oP '(?<=<!-- release-meta: create-pr=).*?(?= -->)' || echo 'true')
+          META=$(echo "$BODY" | grep -oP '(?<=<!-- release-meta: ).*?(?= -->)' || echo '')
+          CREATE_PR=$(echo "$META" | grep -oP '(?<=create-pr=)\S+' || echo 'true')
+          PACKAGE=$(echo "$META" | grep -oP '(?<=package=)\S+' || echo '')
+          OLD_VERSION=$(echo "$META" | grep -oP '(?<=old-version=)\S+' || echo '')
+          NEW_VERSION=$(echo "$META" | grep -oP '(?<=new-version=)\S+' || echo '')
+          BUMP=$(echo "$META" | grep -oP '(?<=bump=)\S+' || echo '')
           echo "create-pr=$CREATE_PR" >> $GITHUB_OUTPUT
+          echo "package=$PACKAGE" >> $GITHUB_OUTPUT
+          echo "old-version=$OLD_VERSION" >> $GITHUB_OUTPUT
+          echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "bump=$BUMP" >> $GITHUB_OUTPUT
 
       # フェーズ2：PRマージ時（本体）
       - name: Release Core
@@ -76,6 +85,11 @@ jobs:
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
           pr-body: ${{ github.event.pull_request.body }}
+          pr-number: ${{ github.event.pull_request.number }}
+          package: ${{ steps.meta.outputs.package }}
+          old-version: ${{ steps.meta.outputs.old-version }}
+          new-version: ${{ steps.meta.outputs.new-version }}
+          bump: ${{ steps.meta.outputs.bump }}
           create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
 
       # フェーズ2：PRマージ時（プラグイン）
