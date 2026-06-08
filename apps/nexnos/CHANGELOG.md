@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.5.1
+
+### Patch Changes
+
+- 🐛 fix(cms): test complete patch release flow
+
 ## 0.5.0
 
 ### Minor Changes
