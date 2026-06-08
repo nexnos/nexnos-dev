@@ -250,14 +250,18 @@ runs:
         CHANGELOG="apps/${{ inputs.package }}/CHANGELOG.md"
         CHANGELOG_BODY=$(awk "/^## ${VERSION}/{found=1; next} found && /^## /{exit} found{print}" "$CHANGELOG")
 
-        # 製品リポジトリにドラフトリリースを作成
-        gh release create "v${VERSION}" \
-          --repo nexnos/nexnos \
-          --draft \
-          --title "nexnos v${VERSION} (${RELEASE_DATE})" \
-          --notes "## nexnos v${VERSION} (${RELEASE_DATE})
+        # リリースノートをヒアドキュメントでファイルに書き出す
+        NOTES_FILE=$(mktemp)
+        cat > "$NOTES_FILE" << NOTES_EOF
+## nexnos v${VERSION} (${RELEASE_DATE})
 
-${CHANGELOG_BODY}"
+${CHANGELOG_BODY}
+NOTES_EOF
+
+        # 製品リポジトリにドラフトリリースを作成
+        gh release create "v${VERSION}"           --repo nexnos/nexnos           --draft           --title "nexnos v${VERSION} (${RELEASE_DATE})"           --notes-file "$NOTES_FILE"
+
+        rm -f "$NOTES_FILE"
       env:
         GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
