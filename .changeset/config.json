@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
-  "changelog": ["./formatter.js", { "repo": "nexnos/nexnos-dev" }],
+  "changelog": "./formatter.js",
   "commit": false,
   "fixed": [],
   "linked": [],
