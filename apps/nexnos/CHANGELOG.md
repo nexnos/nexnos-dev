@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.4
+
+### Patch Changes
+
+- 🔧 chore(config): test sync with fixed cherry-pick
+
 ## 0.2.3
 
 ### Patch Changes
