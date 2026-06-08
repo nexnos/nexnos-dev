@@ -40,6 +40,18 @@ Semantic Versioning（`v{major}.{minor}.{patch}`）に従う。
 | `minor` | `main` | Milestoneルールにより未リリースコードはmainに入らない |
 | `patch` | `maint/vX` | hotfix cherry-pick済みのmaint/vXからのみ作成することでhotfixだけを含むリリースを保証 |
 
+### maintブランチの役割
+
+`maint/vX` はそのメジャーバージョン系の最新リリース状態を常に反映する。
+
+| bump | maintの更新方法 |
+| --- | --- |
+| `major` | 新しい `maint/vX` をmainから作成する |
+| `minor` | 既存の `maint/vX` をmainにfast-forwardする |
+| `patch` | hotfixコミットをmaintにcherry-pickする |
+
+> patchリリース後、`maint/vX` ブランチに「X commits ahead/behind main」と表示されるが正常な状態。`maint/vX` → `main` へのPRは作成しないこと。
+
 ## リリースフロー
 
 リリース作業はGitHub Actionsで自動化する。
@@ -49,9 +61,9 @@ Semantic Versioning（`v{major}.{minor}.{patch}`）に従う。
 ```text
 .github/
 ├── workflows/
-│   └── release.yml              ← リリースの唯一の窓口
+│   └── release.yml              ← リリースの唯一の窓口（手動・自動両対応）
 └── actions/
-    ├── release-prep/            ← フェーズ1共通処理（minor/major）
+    ├── release-prep/            ← フェーズ1共通処理（minor/major/patch）
     ├── release-core/            ← 本体リリース処理
     ├── release-plugin/          ← プラグインリリース処理
     └── release-theme/           ← テーマリリース処理
@@ -64,20 +76,22 @@ Semantic Versioning（`v{major}.{minor}.{patch}`）に従う。
 | トリガー | 種別 | 処理 |
 | --- | --- | --- |
 | `workflow_dispatch` | 手動実行 | minor/majorリリースのフェーズ1 |
-| `hotfix/`ブランチのPRマージ | 自動 | patchリリースのフェーズ1（自動起動） |
-| `release/`ブランチのPRマージ | 自動 | フェーズ2（タグ・製品リポジトリ同期） |
+| `hotfix/`ブランチのPRがmainにマージ | 自動 | patchリリースのフェーズ1（自動起動） |
+| `release/nexnos-`ブランチのPRがmainまたはmaint/**にマージ | 自動 | フェーズ2：本体リリース |
+| `release/plugin-`ブランチのPRがmainにマージ | 自動 | フェーズ2：プラグインリリース |
+| `release/theme-`ブランチのPRがmainにマージ | 自動 | フェーズ2：テーマリリース |
 
-### マイナー/メジャーリリース
+### マイナーリリース（v1.0.x → v1.1.0）
 
 #### フェーズ1：リリース準備（手動トリガー）
 
 ```text
 1. release.yml を手動実行する
    - パッケージを選択する（nexnos / plugin/seo / theme/default）
-   - アップデート種別を選択する（minor / major）
+   - アップデート種別を選択する（minor）
    - 製品リポジトリをPR経由で同期するか選択する（デフォルト：ON）
 2. Actionsが自動で以下を実行する：
-   a. major：mainから / minor：mainからrelease/ブランチを作成する
+   a. mainからrelease/ブランチを作成する
    b. pnpm changeset version でバージョン番号を自動採番する
    c. CHANGELOG.mdを自動更新する
    d. package.jsonのバージョン番号を自動更新する
@@ -90,31 +104,41 @@ Semantic Versioning（`v{major}.{minor}.{patch}`）に従う。
 
 ```text
 release/ブランチのPRがmainにマージされると自動で以下を実行する：
-  1. maint/vXにcherry-pickする（初回は新規作成）
-  2. mainにリリース作業コミットをcherry-pickする（CHANGELOG・バージョン同期）
-  3. タグを自動作成する（例：nexnos@1.1.0）
-  4. 製品リポジトリへソースコードを同期する
+  1. maint/vXをmainにfast-forwardする
+  2. maint/vX上にタグを作成する（例：nexnos@1.1.0）
+  3. 製品リポジトリへソースコードを同期する
      - PR経由（デフォルト）またはmainへ直接push
-  5. GitHub Releasesにリリースノートを自動公開する（作成予定）
+  4. GitHub Releasesにリリースノートを自動公開する（作成予定）
 ```
 
-### パッチリリース（hotfix）
+### パッチリリース（v1.0.0 → v1.0.1）
 
-#### フロー概要
+hotfix専用のリリースフローで、即時リリースを原則とする。
+
+#### フェーズ1：リリース準備（hotfix PRマージ自動トリガー）
 
 ```text
 1. mainからhotfix/ブランチを作成して修正する
 2. changesetファイルを作成する（Claude Codeが自動生成）
 3. PRをmainにマージする
-4. Actionsが自動で以下を実行する（フェーズ1）：
-   a. maint/vXにhotfixをcherry-pickする
+4. Actionsが自動で以下を実行する：
+   a. hotfixコミットをmaint/vXにcherry-pickする
    b. maint/vXからrelease/ブランチを作成する
    c. pnpm changeset version でバージョン番号を自動採番する
    d. CHANGELOG.mdを自動更新する
    e. package.jsonのバージョン番号を自動更新する
    f. 変更をコミットしてmaint/vXへのPRを自動作成する
 5. PRの内容を確認してmaint/vXにマージする
-6. フェーズ2が自動実行される（タグ・製品リポジトリ同期）
+```
+
+#### フェーズ2：リリース（PRマージ自動トリガー）
+
+```text
+release/ブランチのPRがmaint/vXにマージされると自動で以下を実行する：
+  1. リリース作業コミット（CHANGELOG・バージョン更新）をmainにもcherry-pickする
+  2. maint/vX上にタグを作成する（例：nexnos@1.0.1）
+  3. 製品リポジトリへソースコードを同期する
+  4. GitHub Releasesにリリースノートを自動公開する（作成予定）
 ```
 
 > ため込まず即時リリースを原則とする。複数hotfixが発生した場合も個別にパッチリリースを行う。
@@ -129,8 +153,8 @@ release/ブランチのPRがmainにマージされると自動で以下を実行
    - アップデート種別：major
 4. PRの内容を確認・編集してmainにマージする
 5. フェーズ2が自動実行される
-   - maint/v2が新規作成される
-   - タグ nexnos@2.0.0 が作成される
+   - 新しい maint/v2 がmainから作成される
+   - maint/v2 上にタグ nexnos@2.0.0 が作成される
    - 製品リポジトリへ同期される
 6. nextブランチを削除する
 7. release.yml の options に v2 を追加・default を v2 に変更する
@@ -153,8 +177,9 @@ Changesetsを採用する。
 
 コード変更のたびにchangesetファイルを作成する。Claude Codeが自動生成する。
 
+summaryにはコミットタイトルをそのまま記載する（絵文字・Typeを含む）。
+
 ```markdown
-<!-- .changeset/add-markdown-shortcuts.md -->
 ---
 "nexnos": minor
 ---
