@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.2.6
+
+### Patch Changes
+
+- 🔧 chore(config): test changelog in PR body
+
 ## 0.2.5
 
 ### Patch Changes
