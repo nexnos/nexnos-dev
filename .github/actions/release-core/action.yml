@@ -252,7 +252,7 @@ runs:
 
         # リリースノートをファイルに書き出す
         NOTES_FILE=$(mktemp)
-        printf "## nexnos v%s (%s)\n\n%s\n" "$VERSION" "$RELEASE_DATE" "$CHANGELOG_BODY" > "$NOTES_FILE"
+        { echo "## nexnos v${VERSION} (${RELEASE_DATE})"; echo ""; echo "${CHANGELOG_BODY}"; } > "$NOTES_FILE"
 
         # 製品リポジトリにドラフトリリースを作成
         gh release create "v${VERSION}" \
