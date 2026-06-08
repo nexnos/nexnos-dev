@@ -13,12 +13,11 @@ on:
           - plugin/seo
           - theme/default
       bump:
-        description: 'アップデート種別'
+        description: 'アップデート種別（minor / major のみ。patch は hotfix フローで自動実行）'
         type: choice
         required: true
         options:
           - ''
-          - patch
           - minor
           - major
       create-pr:
@@ -42,9 +41,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      # フェーズ1：手動実行時
+      # トリガー判断
+      - name: Detect trigger type
+        id: trigger
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=manual" >> $GITHUB_OUTPUT
+
+          elif [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+            HEAD_REF="${{ github.event.pull_request.head.ref }}"
+            if [[ "$HEAD_REF" == hotfix/* ]]; then
+              echo "type=hotfix" >> $GITHUB_OUTPUT
+            elif [[ "$HEAD_REF" == release/nexnos-* ]]; then
+              echo "type=release-core" >> $GITHUB_OUTPUT
+            elif [[ "$HEAD_REF" == release/plugin-* ]]; then
+              echo "type=release-plugin" >> $GITHUB_OUTPUT
+            elif [[ "$HEAD_REF" == release/theme-* ]]; then
+              echo "type=release-theme" >> $GITHUB_OUTPUT
+            else
+              echo "type=skip" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "type=skip" >> $GITHUB_OUTPUT
+          fi
+
+      # フェーズ1：手動実行時（minor / major）
       - name: Release Prep
-        if: github.event_name == 'workflow_dispatch'
+        if: steps.trigger.outputs.type == 'manual'
         uses: ./.github/actions/release-prep
         with:
           package: ${{ inputs.package }}
@@ -52,10 +76,24 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           create-pr: ${{ inputs.create-pr }}
 
+      # フェーズ1：hotfix PRマージ時（patch 自動）
+      - name: Hotfix Prep
+        if: steps.trigger.outputs.type == 'hotfix'
+        uses: ./.github/actions/release-prep
+        with:
+          package: nexnos
+          bump: patch
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          create-pr: 'true'
+          hotfix-sha: ${{ github.event.pull_request.merge_commit_sha }}
+
       # フェーズ2：PR本文からメタ情報を取得
       - name: Extract release meta
         id: meta
-        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+        if: |
+          steps.trigger.outputs.type == 'release-core' ||
+          steps.trigger.outputs.type == 'release-plugin' ||
+          steps.trigger.outputs.type == 'release-theme'
         shell: bash
         run: |
           BODY="${{ github.event.pull_request.body }}"
@@ -71,12 +109,9 @@ jobs:
           echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "bump=$BUMP" >> $GITHUB_OUTPUT
 
-      # フェーズ2：PRマージ時（本体）
+      # フェーズ2：release/nexnos- PRマージ時
       - name: Release Core
-        if: |
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.merged == true &&
-          startsWith(github.event.pull_request.head.ref, 'release/nexnos-')
+        if: steps.trigger.outputs.type == 'release-core'
         uses: ./.github/actions/release-core
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -92,12 +127,9 @@ jobs:
           bump: ${{ steps.meta.outputs.bump }}
           create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
 
-      # フェーズ2：PRマージ時（プラグイン）
+      # フェーズ2：release/plugin- PRマージ時
       - name: Release Plugin
-        if: |
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.merged == true &&
-          startsWith(github.event.pull_request.head.ref, 'release/plugin-')
+        if: steps.trigger.outputs.type == 'release-plugin'
         uses: ./.github/actions/release-plugin
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -108,12 +140,9 @@ jobs:
           pr-body: ${{ github.event.pull_request.body }}
           create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
 
-      # フェーズ2：PRマージ時（テーマ）
+      # フェーズ2：release/theme- PRマージ時
       - name: Release Theme
-        if: |
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.merged == true &&
-          startsWith(github.event.pull_request.head.ref, 'release/theme-')
+        if: steps.trigger.outputs.type == 'release-theme'
         uses: ./.github/actions/release-theme
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

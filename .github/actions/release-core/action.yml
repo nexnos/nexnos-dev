@@ -87,6 +87,42 @@ runs:
         git push origin "$MAINT"
         git switch main
 
+    - name: Sync release commits to main
+      shell: bash
+      run: |
+        MAINT="${{ steps.version.outputs.maint_branch }}"
+        MERGE_SHA="${{ inputs.merge-commit-sha }}"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git switch main
+
+        # リリース作業コミット（CHANGELOG・package.json更新）をmainにも反映する
+        # patch時：maint/vXのリリース作業コミットをmainにcherry-pick
+        # minor/major時：mainへのマージ時点でリリース作業コミットが含まれるためスキップ
+        # bump情報はメタデータから取得。なければブランチ名から判断
+        BUMP="${{ inputs.bump }}"
+        if [ -z "$BUMP" ]; then
+          BRANCH="${{ inputs.branch }}"
+          # バージョン番号の最後の部分が0以外ならpatch（例：v0.2.1 → patch）
+          PATCH_VER=$(echo "$BRANCH" | grep -oP '\d+$')
+          [ "$PATCH_VER" != "0" ] && BUMP="patch" || BUMP="minor"
+        fi
+        if [ "$BUMP" = "patch" ]; then
+          # maint/vXの最新コミット（リリース作業コミット）を取得
+          RELEASE_COMMIT=$(git log origin/"$MAINT" -1 --format="%H")
+          git cherry-pick "$RELEASE_COMMIT" || {
+            if git cherry-pick --skip 2>/dev/null; then
+              echo "cherry-pick was empty, skipped."
+            else
+              echo "::warning::Failed to sync release commits to main. Manual sync may be needed."
+              git cherry-pick --abort || true
+            fi
+          }
+          git push origin main || true
+        fi
+
     - name: Create tag
       shell: bash
       run: |

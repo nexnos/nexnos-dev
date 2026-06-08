@@ -6,7 +6,7 @@ inputs:
     description: 'リリース対象パッケージ'
     required: true
   bump:
-    description: 'アップデート種別（patch/minor/major）'
+    description: 'アップデート種別（minor/major/patch）'
     required: true
   github-token:
     description: 'GitHub Token'
@@ -15,6 +15,10 @@ inputs:
     description: '製品リポジトリへの同期をPR経由で行う'
     required: false
     default: 'true'
+  hotfix-sha:
+    description: 'hotfixのマージコミットSHA（patch時のみ）'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -48,6 +52,51 @@ runs:
           git add pnpm-lock.yaml
           git commit -m "📦 build(config): add pnpm lock file" || true
           git push origin main || true
+        fi
+
+    - name: Determine maint branch
+      id: maint
+      shell: bash
+      run: |
+        PACKAGE_SLUG=$(echo "${{ inputs.package }}" | sed 's/\//-/g')
+        # 最新タグからメジャーバージョンを特定
+        LATEST_TAG=$(git tag --list "${PACKAGE_SLUG}@*" | sort -V | tail -1)
+        if [ -z "$LATEST_TAG" ]; then
+          MAJOR="0"
+        else
+          MAJOR=$(echo "$LATEST_TAG" | grep -oP '(?<=@)\d+')
+        fi
+        echo "branch=maint/${PACKAGE_SLUG}/v${MAJOR}" >> $GITHUB_OUTPUT
+        echo "major=$MAJOR" >> $GITHUB_OUTPUT
+
+    - name: Cherry-pick hotfix to maint branch
+      if: inputs.bump == 'patch' && inputs.hotfix-sha != ''
+      shell: bash
+      run: |
+        MAINT="${{ steps.maint.outputs.branch }}"
+        HOTFIX_SHA="${{ inputs.hotfix-sha }}"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+          git fetch origin "$MAINT"
+          git switch "$MAINT"
+          git cherry-pick "$HOTFIX_SHA" || {
+            if git cherry-pick --skip 2>/dev/null; then
+              echo "cherry-pick was empty, skipped."
+            else
+              echo "::error::cherry-pick failed. Manual intervention required."
+              git cherry-pick --abort || true
+              git switch main
+              exit 1
+            fi
+          }
+          git push origin "$MAINT"
+          git switch main
+        else
+          echo "::error::maint branch $MAINT not found. Please create it first."
+          exit 1
         fi
 
     - name: Get current version
@@ -85,7 +134,13 @@ runs:
 
     - name: Run changeset version
       shell: bash
-      run: pnpm changeset version
+      run: |
+        if [ "${{ inputs.bump }}" = "patch" ]; then
+          # patch時はmaint/vXからchangeset versionを実行
+          git fetch origin "${{ steps.maint.outputs.branch }}"
+          git switch "${{ steps.maint.outputs.branch }}"
+        fi
+        pnpm changeset version
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
@@ -95,7 +150,9 @@ runs:
         PACKAGE_SLUG="${{ steps.bump_version.outputs.package_slug }}"
         OLD_VERSION="${{ steps.current_version.outputs.version }}"
         NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+        BUMP="${{ inputs.bump }}"
         BRANCH="release/${PACKAGE_SLUG}-v${NEW_VERSION}"
+        MAINT="${{ steps.maint.outputs.branch }}"
 
         # CHANGELOG.md から最新バージョンの変更内容を抽出
         case "${{ inputs.package }}" in
@@ -108,6 +165,17 @@ runs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
+        # patch：maint/vXから / minor・major：mainから
+        if [ "$BUMP" = "patch" ]; then
+          # すでにmaint/vXにいる状態
+          BASE_BRANCH="$MAINT"
+          PR_BASE="$MAINT"
+        else
+          git switch main
+          BASE_BRANCH="main"
+          PR_BASE="main"
+        fi
+
         git switch -c "$BRANCH"
         git add -A
         git commit -m "📦 build(release): release ${PACKAGE_SLUG} v${NEW_VERSION}"
@@ -119,7 +187,7 @@ runs:
 
         - **パッケージ**：${{ inputs.package }}
         - **バージョン**：v${OLD_VERSION} → v${NEW_VERSION}
-        - **種別**：${{ inputs.bump }}
+        - **種別**：${BUMP}
 
         ## 変更内容
 
@@ -128,8 +196,8 @@ runs:
         ---
         このPRをmainにマージするとリリースフローが自動実行されます。
 
-        <!-- release-meta: create-pr=${{ inputs.create-pr }} package=${{ inputs.package }} old-version=${OLD_VERSION} new-version=${NEW_VERSION} bump=${{ inputs.bump }} -->" \
-          --base main \
+        <!-- release-meta: create-pr=${{ inputs.create-pr }} package=${{ inputs.package }} old-version=${OLD_VERSION} new-version=${NEW_VERSION} bump=${BUMP} -->" \
+          --base "$PR_BASE" \
           --head "$BRANCH"
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
