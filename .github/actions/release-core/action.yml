@@ -64,27 +64,51 @@ runs:
       run: |
         MAINT="${{ steps.version.outputs.maint_branch }}"
         MERGE_SHA="${{ inputs.merge-commit-sha }}"
+        BUMP="${{ inputs.bump }}"
 
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
-          git fetch origin "$MAINT"
-          git switch "$MAINT"
-          git cherry-pick "$MERGE_SHA" || {
-            if git cherry-pick --skip 2>/dev/null; then
-              echo "cherry-pick was empty, skipped."
-            else
-              echo "::error::cherry-pick failed. Manual intervention required."
-              git cherry-pick --abort || true
-              git switch main
-              exit 1
-            fi
-          }
-        else
+        if [ "$BUMP" = "major" ]; then
+          # major：新しいmaintブランチをmainから作成
+          git switch main
           git switch -c "$MAINT"
+          git push origin "$MAINT"
+
+        elif [ "$BUMP" = "minor" ]; then
+          # minor：maintをmainにfast-forward
+          if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+            git fetch origin "$MAINT"
+            git switch "$MAINT"
+            git reset --hard origin/main
+            git push --force-with-lease origin "$MAINT"
+          else
+            git switch main
+            git switch -c "$MAINT"
+            git push origin "$MAINT"
+          fi
+
+        else
+          # patch：hotfixをcherry-pick
+          if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+            git fetch origin "$MAINT"
+            git switch "$MAINT"
+            git cherry-pick "$MERGE_SHA" || {
+              if git cherry-pick --skip 2>/dev/null; then
+                echo "cherry-pick was empty, skipped."
+              else
+                echo "::error::cherry-pick failed. Manual intervention required."
+                git cherry-pick --abort || true
+                git switch main
+                exit 1
+              fi
+            }
+            git push origin "$MAINT"
+          else
+            echo "::error::maint branch $MAINT not found for patch release."
+            exit 1
+          fi
         fi
-        git push origin "$MAINT"
         git switch main
 
     - name: Sync release commits to main
@@ -127,12 +151,16 @@ runs:
       shell: bash
       run: |
         TAG="${{ steps.version.outputs.tag }}"
-        git switch main
+        MAINT="${{ steps.version.outputs.maint_branch }}"
+        # タグはmaint/vXブランチ上に打つ
+        git fetch origin "$MAINT"
+        git switch "$MAINT"
         if git tag "$TAG" 2>/dev/null; then
           git push origin "$TAG"
         else
           echo "Tag $TAG already exists, skipping."
         fi
+        git switch main
 
     - name: Generate GitHub App token
       id: app-token
