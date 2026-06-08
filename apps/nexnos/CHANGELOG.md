@@ -1,5 +1,11 @@
 # nexnos
 
+## 1.0.0
+
+### Major Changes
+
+- ✨ feat(cms)!: test major release flow with BREAKING CHANGE
+
 ## 0.5.1
 
 ### Patch Changes
