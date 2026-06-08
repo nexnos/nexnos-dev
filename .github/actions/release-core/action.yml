@@ -17,6 +17,14 @@ inputs:
   merge-commit-sha:
     description: 'マージコミットのSHA'
     required: true
+  pr-body:
+    description: '開発リポジトリのリリースPR本文'
+    required: false
+    default: ''
+  create-pr:
+    description: '製品リポジトリへの同期をPR経由で行う'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -83,7 +91,9 @@ runs:
       shell: bash
       run: |
         VERSION="${{ steps.version.outputs.version }}"
+        TAG="${{ steps.version.outputs.tag }}"
         PRODUCT_DIR="${{ github.workspace }}/../nexnos-product"
+        CREATE_PR="${{ inputs.create-pr }}"
 
         # 製品リポジトリをclone
         git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/nexnos/nexnos.git "$PRODUCT_DIR"
@@ -95,9 +105,34 @@ runs:
         cd "$PRODUCT_DIR"
         git config user.name "nexnos-bot[bot]"
         git config user.email "nexnos-bot[bot]@users.noreply.github.com"
-        git add -A
-        git diff --staged --quiet || git commit -m "📦 build(release): sync nexnos v${VERSION}"
-        git push origin main
+
+        if [ "$CREATE_PR" = "true" ]; then
+          # C案：PR経由で同期
+          SYNC_BRANCH="release/nexnos-v${VERSION}"
+          git switch -c "$SYNC_BRANCH"
+          git add -A
+          git diff --staged --quiet || git commit -m "📦 build(release): release nexnos v${VERSION}"
+          git push origin "$SYNC_BRANCH"
+
+          gh pr create \
+            --title "📦 build(release): release nexnos v${VERSION}" \
+            --body "## リリース内容
+
+          - **バージョン**：v${VERSION}
+          - **開発リポジトリ**：nexnos/nexnos-dev
+          - **タグ**：${TAG}
+
+          ${{ inputs.pr-body }}" \
+            --base main \
+            --head "$SYNC_BRANCH"
+        else
+          # B案：直接push
+          git add -A
+          git diff --staged --quiet || git commit -m "📦 build(release): release nexnos v${VERSION}"
+          git push origin main
+        fi
+      env:
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
     - name: Build Docker image
       shell: bash
