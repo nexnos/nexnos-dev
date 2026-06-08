@@ -1,5 +1,11 @@
 # nexnos
 
+## 0.3.0
+
+### Minor Changes
+
+- ✨ feat(cms): test refactored release workflow
+
 ## 0.2.11
 
 ### Patch Changes
