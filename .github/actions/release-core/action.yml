@@ -186,9 +186,9 @@ runs:
         git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/nexnos/nexnos.git "$PRODUCT_DIR"
 
         # .releaseignore から除外オプションを生成する
-        # パッケージごとに異なる除外設定を持てるよう apps/nexnos/.releaseignore を参照する
+        # パッケージごとに異なる除外設定を持てるよう apps/{package}/.releaseignore を参照する
         RSYNC_EXCLUDES="--exclude=.git"
-        RELEASEIGNORE="apps/nexnos/.releaseignore"
+        RELEASEIGNORE="apps/${{ inputs.package }}/.releaseignore"
         if [ -f "$RELEASEIGNORE" ]; then
           while IFS= read -r line || [ -n "$line" ]; do
             # 空行・コメント行をスキップ

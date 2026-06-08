@@ -97,7 +97,21 @@ runs:
     - name: Sync to product repository and create release
       shell: bash
       run: |
-        echo "TODO: Sync to nexnos/${PLUGIN} repository"
+        PLUGIN="${{ steps.version.outputs.plugin }}"
+        # "plugin-seo" → "plugins/seo"
+        PLUGIN_DIR="plugins/${PLUGIN#plugin-}"
+
+        # .releaseignore から除外オプションを生成する
+        RSYNC_EXCLUDES="--exclude=.git"
+        RELEASEIGNORE="${PLUGIN_DIR}/.releaseignore"
+        if [ -f "$RELEASEIGNORE" ]; then
+          while IFS= read -r line || [ -n "$line" ]; do
+            [[ -z "$line" || "$line" == \#* ]] && continue
+            RSYNC_EXCLUDES="$RSYNC_EXCLUDES --exclude=$line"
+          done < "$RELEASEIGNORE"
+        fi
+
+        echo "TODO: Sync to product repository with rsync excludes: $RSYNC_EXCLUDES"
         echo "TODO: Create GitHub Release with ZIP"
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
