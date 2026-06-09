@@ -54,11 +54,11 @@ jobs:
             HEAD_REF="${{ github.event.pull_request.head.ref }}"
             if [[ "$HEAD_REF" == hotfix/* ]]; then
               echo "type=hotfix" >> $GITHUB_OUTPUT
-            elif [[ "$HEAD_REF" == release/nexnos-* ]]; then
+            elif [[ "$HEAD_REF" == release/core/* ]]; then
               echo "type=release-core" >> $GITHUB_OUTPUT
-            elif [[ "$HEAD_REF" == release/plugin-* ]]; then
+            elif [[ "$HEAD_REF" == release/plugin/* ]]; then
               echo "type=release-plugin" >> $GITHUB_OUTPUT
-            elif [[ "$HEAD_REF" == release/theme-* ]]; then
+            elif [[ "$HEAD_REF" == release/theme/* ]]; then
               echo "type=release-theme" >> $GITHUB_OUTPUT
             else
               echo "type=skip" >> $GITHUB_OUTPUT

@@ -26,7 +26,8 @@ runs:
       shell: bash
       run: |
         BRANCH="${{ inputs.branch }}"
-        BRANCH_BODY="${BRANCH#release/}"
+        # release/plugin/nexnos-seo-v1.0.0 → nexnos-seo-v1.0.0
+        BRANCH_BODY="${BRANCH#release/plugin/}"
         VERSION="${BRANCH_BODY##*-v}"
         PLUGIN_NAME="${BRANCH_BODY%-v*}"
         echo "plugin=$PLUGIN_NAME" >> $GITHUB_OUTPUT

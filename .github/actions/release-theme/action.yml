@@ -26,7 +26,8 @@ runs:
       shell: bash
       run: |
         BRANCH="${{ inputs.branch }}"
-        BRANCH_BODY="${BRANCH#release/}"
+        # release/theme/nexnos-default-v1.0.0 → nexnos-default-v1.0.0
+        BRANCH_BODY="${BRANCH#release/theme/}"
         VERSION="${BRANCH_BODY##*-v}"
         THEME_NAME="${BRANCH_BODY%-v*}"
         echo "theme=$THEME_NAME" >> $GITHUB_OUTPUT

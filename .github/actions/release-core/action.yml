@@ -54,7 +54,7 @@ runs:
       shell: bash
       run: |
         BRANCH="${{ inputs.branch }}"
-        VERSION="${BRANCH#release/nexnos-v}"
+        VERSION="${BRANCH#release/core/nexnos-v}"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=nexnos@${VERSION}" >> $GITHUB_OUTPUT
         echo "maint_branch=maint/nexnos/v${VERSION%%.*}" >> $GITHUB_OUTPUT

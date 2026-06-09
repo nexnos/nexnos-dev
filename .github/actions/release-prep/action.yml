@@ -151,7 +151,13 @@ runs:
         OLD_VERSION="${{ steps.current_version.outputs.version }}"
         NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
         BUMP="${{ inputs.bump }}"
-        BRANCH="release/${PACKAGE_SLUG}-v${NEW_VERSION}"
+        # パッケージ種別に応じてブランチ名を決定
+        case "${{ inputs.package }}" in
+          nexnos)        BRANCH="release/core/nexnos-v${NEW_VERSION}" ;;
+          plugin/*)      SLUG=$(echo "${{ inputs.package }}" | sed 's|plugin/||'); BRANCH="release/plugin/nexnos-${SLUG}-v${NEW_VERSION}" ;;
+          theme/*)       SLUG=$(echo "${{ inputs.package }}" | sed 's|theme/||'); BRANCH="release/theme/nexnos-${SLUG}-v${NEW_VERSION}" ;;
+          *)             BRANCH="release/core/${PACKAGE_SLUG}-v${NEW_VERSION}" ;;
+        esac
         MAINT="${{ steps.maint.outputs.branch }}"
 
         # CHANGELOG.md から最新バージョンの変更内容を抽出
