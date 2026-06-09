@@ -1,5 +1,5 @@
 name: 'Release Plugin'
-description: 'プラグインリリース：maintブランチ更新・タグ作成・ビルド・ZIP生成・製品リポジトリ同期'
+description: 'プラグインリリース：maintブランチ更新・タグ作成・製品リポジトリ同期・GitHub Releases作成'
 
 inputs:
   github-token:
@@ -17,6 +17,34 @@ inputs:
   merge-commit-sha:
     description: 'マージコミットのSHA'
     required: true
+  pr-body:
+    description: '開発リポジトリのリリースPR本文'
+    required: false
+    default: ''
+  pr-number:
+    description: '開発リポジトリのリリースPR番号'
+    required: false
+    default: ''
+  package:
+    description: 'リリース対象パッケージ'
+    required: false
+    default: ''
+  old-version:
+    description: 'リリース前のバージョン'
+    required: false
+    default: ''
+  new-version:
+    description: 'リリース後のバージョン'
+    required: false
+    default: ''
+  bump:
+    description: 'アップデート種別'
+    required: false
+    default: ''
+  create-pr:
+    description: '製品リポジトリへの同期をPR経由で行う'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -30,77 +58,108 @@ runs:
         BRANCH_BODY="${BRANCH#release/plugin/}"
         VERSION="${BRANCH_BODY##*-v}"
         PLUGIN_NAME="${BRANCH_BODY%-v*}"
+        # nexnos-seo → plugins/nexnos-seo
+        PLUGIN_DIR="plugins/${PLUGIN_NAME}"
+        # nexnos/nexnos-seo
+        PRODUCT_REPO="nexnos/${PLUGIN_NAME}"
         echo "plugin=$PLUGIN_NAME" >> $GITHUB_OUTPUT
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=${PLUGIN_NAME}@${VERSION}" >> $GITHUB_OUTPUT
         echo "maint_branch=maint/${PLUGIN_NAME}/v${VERSION%%.*}" >> $GITHUB_OUTPUT
-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-
-    - name: Install dependencies
-      shell: bash
-      run: pnpm install --no-frozen-lockfile
+        echo "plugin_dir=$PLUGIN_DIR" >> $GITHUB_OUTPUT
+        echo "product_repo=$PRODUCT_REPO" >> $GITHUB_OUTPUT
 
     - name: Update maint branch
       shell: bash
       run: |
         MAINT="${{ steps.version.outputs.maint_branch }}"
         MERGE_SHA="${{ inputs.merge-commit-sha }}"
+        BUMP="${{ inputs.bump }}"
 
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
-          git fetch origin "$MAINT"
-          git switch "$MAINT"
-          git cherry-pick "$MERGE_SHA" || {
-            echo "::error::cherry-pick failed. Manual intervention required."
-            exit 1
-          }
-        else
+        if [ "$BUMP" = "major" ]; then
+          # major：新しいmaintブランチをmainから作成
           git switch main
           git switch -c "$MAINT"
+          git push origin "$MAINT"
+
+        elif [ "$BUMP" = "minor" ]; then
+          # minor：maintをmainにfast-forward
+          if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+            git fetch origin "$MAINT"
+            git switch "$MAINT"
+            git reset --hard origin/main
+            git push --force-with-lease origin "$MAINT"
+          else
+            git switch main
+            git switch -c "$MAINT"
+            git push origin "$MAINT"
+          fi
+
+        else
+          # patch：hotfixをcherry-pick
+          if git ls-remote --exit-code origin "$MAINT" > /dev/null 2>&1; then
+            git fetch origin "$MAINT"
+            git switch "$MAINT"
+            git cherry-pick "$MERGE_SHA" || {
+              if git cherry-pick --skip 2>/dev/null; then
+                echo "cherry-pick was empty, skipped."
+              else
+                echo "::error::cherry-pick failed. Manual intervention required."
+                git cherry-pick --abort || true
+                git switch main
+                exit 1
+              fi
+            }
+            git push origin "$MAINT"
+          else
+            echo "::error::maint branch $MAINT not found for patch release."
+            exit 1
+          fi
         fi
-        git push origin "$MAINT"
+        git switch main
 
     - name: Create tag
       shell: bash
       run: |
         TAG="${{ steps.version.outputs.tag }}"
+        MAINT="${{ steps.version.outputs.maint_branch }}"
+        # タグはmaint/vXブランチ上に打つ
+        git fetch origin "$MAINT"
+        git switch "$MAINT"
+        if git tag "$TAG" 2>/dev/null; then
+          git push origin "$TAG"
+        else
+          echo "Tag $TAG already exists, skipping."
+        fi
         git switch main
-        git tag "$TAG"
-        git push origin "$TAG"
 
-    - name: Build plugin
+    - name: Generate GitHub App token
+      id: app-token
+      uses: tibdex/github-app-token@v2
+      with:
+        app_id: ${{ inputs.app-id }}
+        private_key: ${{ inputs.app-private-key }}
+
+    - name: Sync to product repository
       shell: bash
       run: |
         PLUGIN="${{ steps.version.outputs.plugin }}"
-        cd "plugins/${PLUGIN#plugin-}"
-        pnpm build
-
-    - name: Create ZIP package
-      id: zip
-      shell: bash
-      run: |
-        PLUGIN="${{ steps.version.outputs.plugin }}"
+        PLUGIN_DIR="${{ steps.version.outputs.plugin_dir }}"
+        PRODUCT_REPO="${{ steps.version.outputs.product_repo }}"
         VERSION="${{ steps.version.outputs.version }}"
-        ZIP_NAME="${PLUGIN}-v${VERSION}.zip"
-        cd "plugins/${PLUGIN#plugin-}"
-        zip -r "../../${ZIP_NAME}" dist/ plugin.json
-        echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+        CREATE_PR="${{ inputs.create-pr }}"
+        PR_NUMBER="${{ inputs.pr-number }}"
+        PACKAGE="${{ inputs.package }}"
+        OLD_VERSION="${{ inputs.old-version }}"
+        NEW_VERSION="${{ inputs.new-version }}"
+        BUMP="${{ inputs.bump }}"
+        PRODUCT_DIR="${{ github.workspace }}/../${PLUGIN}"
 
-    - name: Sync to product repository and create release
-      shell: bash
-      run: |
-        PLUGIN="${{ steps.version.outputs.plugin }}"
-        # "plugin-seo" → "plugins/seo"
-        PLUGIN_DIR="plugins/${PLUGIN#plugin-}"
+        # 製品リポジトリをclone
+        git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${PRODUCT_REPO}.git "$PRODUCT_DIR"
 
         # .releaseignore から除外オプションを生成する
         RSYNC_EXCLUDES="--exclude=.git"
@@ -112,7 +171,68 @@ runs:
           done < "$RELEASEIGNORE"
         fi
 
-        echo "TODO: Sync to product repository with rsync excludes: $RSYNC_EXCLUDES"
-        echo "TODO: Create GitHub Release with ZIP"
+        # プラグインソースを製品リポジトリにコピー
+        eval rsync -av --delete $RSYNC_EXCLUDES "${PLUGIN_DIR}/" "$PRODUCT_DIR/"
+
+        cd "$PRODUCT_DIR"
+        git config user.name "nexnos-bot[bot]"
+        git config user.email "nexnos-bot[bot]@users.noreply.github.com"
+
+        if [ "$CREATE_PR" = "true" ]; then
+          # C案：PR経由で同期
+          SYNC_BRANCH="release/${PLUGIN}-v${VERSION}"
+          git switch -c "$SYNC_BRANCH"
+          git add -A
+          git diff --staged --quiet || git commit -m "📦 build(release): release ${PLUGIN} v${VERSION}"
+          git push origin "$SYNC_BRANCH"
+
+          PR_BODY="${{ inputs.pr-body }}"
+          CHANGES=$(echo "$PR_BODY" | awk "/^## 変更内容/{found=1; next} found && /^---/{exit} found && /^<!-- release-meta/{exit} found{print}")
+          PR_LINK="https://github.com/nexnos/nexnos-dev/pull/${PR_NUMBER}"
+
+          gh pr create \
+            --title "📦 build(release): release ${PLUGIN} v${VERSION}" \
+            --body "## リリース内容
+
+          - **パッケージ**：${PACKAGE}
+          - **バージョン**：v${OLD_VERSION} → v${NEW_VERSION}
+          - **種別**：${BUMP}
+          - **開発リポジトリPR**：[#${PR_NUMBER}](${PR_LINK})
+
+          ## 変更内容
+
+          ${CHANGES}" \
+            --base main \
+            --head "$SYNC_BRANCH"
+        else
+          # B案：直接push
+          git add -A
+          git diff --staged --quiet || git commit -m "📦 build(release): release ${PLUGIN} v${VERSION}"
+          git push origin main
+        fi
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+    - name: Create GitHub Release (Draft)
+      shell: bash
+      run: |
+        PLUGIN="${{ steps.version.outputs.plugin }}"
+        PLUGIN_DIR="${{ steps.version.outputs.plugin_dir }}"
+        PRODUCT_REPO="${{ steps.version.outputs.product_repo }}"
+        VERSION="${{ steps.version.outputs.version }}"
+        RELEASE_DATE=$(date +"%Y/%m/%d")
+
+        # CHANGELOGから該当バージョンの変更内容を抽出
+        CHANGELOG="${PLUGIN_DIR}/CHANGELOG.md"
+        CHANGELOG_BODY=$(awk "/^## ${VERSION}/{found=1; next} found && /^## /{exit} found{print}" "$CHANGELOG")
+
+        # リリースノートをファイルに書き出す
+        NOTES_FILE=$(mktemp)
+        { echo "## ${PLUGIN} v${VERSION} (${RELEASE_DATE})"; echo ""; echo "${CHANGELOG_BODY}"; } > "$NOTES_FILE"
+
+        # 製品リポジトリにドラフトリリースを作成
+        gh release create "v${VERSION}" --repo "${PRODUCT_REPO}" --draft --title "${PLUGIN} v${VERSION} (${RELEASE_DATE})" --notes-file "$NOTES_FILE"
+
+        rm -f "$NOTES_FILE"
+      env:
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}

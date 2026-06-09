@@ -128,7 +128,7 @@ jobs:
           bump: ${{ steps.meta.outputs.bump }}
           create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
 
-      # フェーズ2：release/plugin- PRマージ時
+      # フェーズ2：release/plugin/* PRマージ時
       - name: Release Plugin
         if: steps.trigger.outputs.type == 'release-plugin'
         uses: ./.github/actions/release-plugin
@@ -139,9 +139,14 @@ jobs:
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
           pr-body: ${{ github.event.pull_request.body }}
+          pr-number: ${{ github.event.pull_request.number }}
+          package: ${{ steps.meta.outputs.package }}
+          old-version: ${{ steps.meta.outputs.old-version }}
+          new-version: ${{ steps.meta.outputs.new-version }}
+          bump: ${{ steps.meta.outputs.bump }}
           create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
 
-      # フェーズ2：release/theme- PRマージ時
+      # フェーズ2：release/theme/* PRマージ時
       - name: Release Theme
         if: steps.trigger.outputs.type == 'release-theme'
         uses: ./.github/actions/release-theme
@@ -152,4 +157,9 @@ jobs:
           branch: ${{ github.event.pull_request.head.ref }}
           merge-commit-sha: ${{ github.event.pull_request.merge_commit_sha }}
           pr-body: ${{ github.event.pull_request.body }}
+          pr-number: ${{ github.event.pull_request.number }}
+          package: ${{ steps.meta.outputs.package }}
+          old-version: ${{ steps.meta.outputs.old-version }}
+          new-version: ${{ steps.meta.outputs.new-version }}
+          bump: ${{ steps.meta.outputs.bump }}
           create-pr: ${{ steps.meta.outputs.create-pr || 'true' }}
