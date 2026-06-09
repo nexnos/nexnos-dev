@@ -1,6 +1,6 @@
 {
   "name": "nexnos-default",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "build": "echo 'build nexnos-default'",
     "dev": "echo 'dev nexnos-default'"
