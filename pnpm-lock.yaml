@@ -19,9 +19,9 @@ importers:
 
   packages/core-types: {}
 
-  plugins/seo: {}
+  plugins/nexnos-seo: {}
 
-  themes/default: {}
+  themes/nexnos-default: {}
 
 packages:
 
