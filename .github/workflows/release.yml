@@ -10,8 +10,8 @@ on:
         options:
           - ''
           - nexnos
-          - plugin/seo
-          - theme/default
+          - plugin/nexnos-seo
+          - theme/nexnos-default
       bump:
         description: 'アップデート種別（minor / major のみ。patch は hotfix フローで自動実行）'
         type: choice

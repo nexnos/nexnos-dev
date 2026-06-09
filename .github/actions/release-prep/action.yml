@@ -107,11 +107,11 @@ runs:
           nexnos)
             VERSION=$(node -p "require('./apps/nexnos/package.json').version")
             ;;
-          plugin/seo)
-            VERSION=$(node -p "require('./plugins/seo/package.json').version")
+          plugin/nexnos-seo)
+            VERSION=$(node -p "require('./plugins/nexnos-seo/package.json').version")
             ;;
-          theme/default)
-            VERSION=$(node -p "require('./themes/default/package.json').version")
+          theme/nexnos-default)
+            VERSION=$(node -p "require('./themes/nexnos-default/package.json').version")
             ;;
         esac
         echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -154,8 +154,8 @@ runs:
         # パッケージ種別に応じてブランチ名を決定
         case "${{ inputs.package }}" in
           nexnos)        BRANCH="release/core/nexnos-v${NEW_VERSION}" ;;
-          plugin/*)      SLUG=$(echo "${{ inputs.package }}" | sed 's|plugin/||'); BRANCH="release/plugin/nexnos-${SLUG}-v${NEW_VERSION}" ;;
-          theme/*)       SLUG=$(echo "${{ inputs.package }}" | sed 's|theme/||'); BRANCH="release/theme/nexnos-${SLUG}-v${NEW_VERSION}" ;;
+          plugin/*)      SLUG=$(echo "${{ inputs.package }}" | sed 's|plugin/||'); BRANCH="release/plugin/${SLUG}-v${NEW_VERSION}" ;;
+          theme/*)       SLUG=$(echo "${{ inputs.package }}" | sed 's|theme/||'); BRANCH="release/theme/${SLUG}-v${NEW_VERSION}" ;;
           *)             BRANCH="release/core/${PACKAGE_SLUG}-v${NEW_VERSION}" ;;
         esac
         MAINT="${{ steps.maint.outputs.branch }}"
@@ -163,8 +163,8 @@ runs:
         # CHANGELOG.md から最新バージョンの変更内容を抽出
         case "${{ inputs.package }}" in
           nexnos)        CHANGELOG="apps/nexnos/CHANGELOG.md" ;;
-          plugin/seo)    CHANGELOG="plugins/seo/CHANGELOG.md" ;;
-          theme/default) CHANGELOG="themes/default/CHANGELOG.md" ;;
+          plugin/nexnos-seo)    CHANGELOG="plugins/nexnos-seo/CHANGELOG.md" ;;
+          theme/nexnos-default) CHANGELOG="themes/nexnos-default/CHANGELOG.md" ;;
         esac
         CHANGELOG_BODY=$(awk "/^## ${NEW_VERSION}/{found=1; next} found && /^## /{exit} found{print}" "$CHANGELOG")
 
