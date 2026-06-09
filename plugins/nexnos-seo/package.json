@@ -1,8 +1,8 @@
 {
-  "name": "plugin-seo",
+  "name": "nexnos-seo",
   "version": "0.1.0",
   "scripts": {
-    "build": "echo 'build plugin-seo'",
-    "dev": "echo 'dev plugin-seo'"
+    "build": "echo 'build nexnos-seo'",
+    "dev": "echo 'dev nexnos-seo'"
   }
 }
