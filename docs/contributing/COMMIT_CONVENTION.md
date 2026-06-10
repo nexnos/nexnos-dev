@@ -26,6 +26,28 @@ BREAKING CHANGE: {説明}
   {詳細}
 ```
 
+### 必須・任意
+
+| 要素 | 必須・任意 |
+| --- | --- |
+| `{gitmoji}` | ✅ 必須 |
+| `{type}` | ✅ 必須 |
+| `({scope})` | 🔺 任意 |
+| `{subject}` | ✅ 必須 |
+| `{body}` | 🔺 任意 |
+| `refs #{issue番号}` | 🔺 任意（hotfixはIssueなしのため省略可） |
+| `BREAKING CHANGE` | 🔺 任意（破壊的変更がある場合のみ） |
+
+### BREAKING CHANGEの表記について
+
+BREAKING CHANGEはフッターの `BREAKING CHANGE:` のみで表現する。
+コミットタイトルへの `!` 付与は**禁止**する。
+
+```text
+✅ ✨ feat(core): remove legacy adapter API
+❌ ✨ feat(core)!: remove legacy adapter API
+```
+
 ## Type・Gitmoji対応表
 
 | Gitmoji | Type | 用途 | リリースノート |
@@ -46,7 +68,7 @@ BREAKING CHANGE: {説明}
 
 ## Scope
 
-コミット時に実際に変更したパッケージ・領域から判断する。
+変更したパッケージ・領域を示す。**任意**。
 
 | Scope | 対象 |
 | --- | --- |
@@ -89,7 +111,8 @@ BREAKING CHANGE: {説明}
 
 ## Body
 
-- **任意**：理由が自明な場合は省略してよい
+**任意**。理由が自明な場合は省略してよい。
+
 - **なぜ**変更したかを書く（何をしたかはdiffで分かる）
 - Squash mergeのコミットには「なぜ」＋変更サマリーも追加する
 
@@ -121,7 +144,7 @@ refs #47
 
 ### refs
 
-関連Issueへの参照を記載する。
+**任意**。関連Issueへの参照を記載する。hotfixはIssueなしのため省略可。
 
 ```text
 refs #47
@@ -131,7 +154,8 @@ refs #47
 
 ### BREAKING CHANGE
 
-`refs`の後に記載する。詳細は2スペースインデントで複数行に書く。
+**任意**。破壊的変更がある場合のみ記載する。`refs`の後に記載する。
+詳細は2スペースインデントで複数行に書く。
 
 ```text
 ✨ feat(core): remove legacy adapter API
@@ -177,8 +201,12 @@ refs #52
 
 ```text
 🔧 chore(config): update eslint rules
+```
 
-refs #8
+### Scopeを省略するケース
+
+```text
+🐛 fix: resolve null reference on empty doc
 ```
 
 ### BREAKING CHANGEあり
