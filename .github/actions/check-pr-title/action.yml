@@ -1,0 +1,49 @@
+name: 'Check PR Title'
+description: 'PRタイトルがコミットメッセージ規約に準拠しているか確認'
+
+inputs:
+  title:
+    description: 'PRタイトル'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check PR title format
+      shell: bash
+      run: |
+        TITLE="${{ inputs.title }}"
+
+        # release/・hotfix/ ブランチのPRはスキップ（自動生成タイトル）
+        # PRタイトルではなくブランチ名でスキップ判定できないため、
+        # タイトルが "📦 build(release):" で始まる場合はスキップ
+        if [[ "$TITLE" =~ ^📦[[:space:]]build\(release\): ]]; then
+          echo "✅ リリースPRのためスキップします"
+          exit 0
+        fi
+
+        # 禁止：! の使用
+        if [[ "$TITLE" =~ ^.{1,2}[[:space:]][a-z]+(\([a-z/]+\))?!: ]]; then
+          echo "::error::PRタイトルに '!' は使用禁止です。BREAKING CHANGEはコミットのフッターに記述してください。"
+          echo "::error::タイトル: ${TITLE}"
+          exit 1
+        fi
+
+        # 正規表現：{gitmoji} {type}[({scope})]: {subject}
+        # gitmoji: 1〜2文字の絵文字
+        # type: feat|fix|perf|build|revert|docs|refactor|style|test|chore|ci
+        # scope: 任意
+        # subject: 1文字以上
+        PATTERN='^.{1,2}[[:space:]](feat|fix|perf|build|revert|docs|refactor|style|test|chore|ci)(\([a-zA-Z/]+\))?:[[:space:]].+$'
+
+        if echo "$TITLE" | grep -qP "$PATTERN"; then
+          echo "✅ PRタイトルが規約に準拠しています"
+          echo "タイトル: ${TITLE}"
+        else
+          echo "::error::PRタイトルが規約に準拠していません。"
+          echo "::error::タイトル: ${TITLE}"
+          echo "::error::期待されるフォーマット: {gitmoji} {type}({scope}): {subject}"
+          echo "::error::例: ✨ feat(cms): add comments collection"
+          echo "::error::例: 🐛 fix: resolve null reference"
+          exit 1
+        fi

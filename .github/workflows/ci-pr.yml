@@ -1,0 +1,54 @@
+name: ✅ CI - Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches:
+      - main
+      - maint/**
+
+jobs:
+  check-branch-name:
+    name: Check Branch Name
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check branch name
+        uses: ./.github/actions/check-branch-name
+        with:
+          branch: ${{ github.event.pull_request.head.ref }}
+
+  check-pr-title:
+    name: Check PR Title
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check PR title
+        uses: ./.github/actions/check-pr-title
+        with:
+          title: ${{ github.event.pull_request.title }}
+
+  check-changeset:
+    name: Check Changeset
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check changeset
+        uses: ./.github/actions/check-changeset
+        with:
+          branch: ${{ github.event.pull_request.head.ref }}

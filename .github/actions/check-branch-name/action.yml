@@ -1,0 +1,44 @@
+name: 'Check Branch Name'
+description: 'ブランチ名がブランチ運用規約に準拠しているか確認'
+
+inputs:
+  branch:
+    description: 'PRのheadブランチ名'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check branch name format
+      shell: bash
+      run: |
+        BRANCH="${{ inputs.branch }}"
+
+        # 自動生成ブランチはスキップ
+        if [[ "$BRANCH" == release/* ]] || [[ "$BRANCH" == maint/* ]]; then
+          echo "✅ 自動生成ブランチのためスキップします: ${BRANCH}"
+          exit 0
+        fi
+
+        # hotfixブランチ：hotfix/{kebab-case}
+        if [[ "$BRANCH" =~ ^hotfix/[a-z0-9][a-z0-9-]*$ ]]; then
+          echo "✅ ブランチ名が規約に準拠しています: ${BRANCH}"
+          exit 0
+        fi
+
+        # 通常ブランチ：{type}/{issue番号}-{kebab-case}
+        TYPES="feat|fix|perf|build|revert|docs|refactor|style|test|chore|ci"
+        PATTERN="^(${TYPES})/[0-9]+-[a-z0-9][a-z0-9-]*$"
+
+        if echo "$BRANCH" | grep -qP "$PATTERN"; then
+          echo "✅ ブランチ名が規約に準拠しています: ${BRANCH}"
+          exit 0
+        fi
+
+        echo "::error::ブランチ名が規約に準拠していません。"
+        echo "::error::ブランチ名: ${BRANCH}"
+        echo "::error::通常ブランチ: {type}/{issue番号}-{kebab-case-description}"
+        echo "::error::例: feat/47-comments-collection"
+        echo "::error::hotfixブランチ: hotfix/{kebab-case-description}"
+        echo "::error::例: hotfix/editor-crash"
+        exit 1
