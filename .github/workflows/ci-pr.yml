@@ -58,3 +58,4 @@ jobs:
         uses: ./.github/actions/check-changeset
         with:
           branch: ${{ github.event.pull_request.head.ref }}
+          base-ref: ${{ github.event.pull_request.base.ref }}

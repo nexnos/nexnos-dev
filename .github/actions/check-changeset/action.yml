@@ -5,15 +5,14 @@ inputs:
   branch:
     description: 'PRのheadブランチ名'
     required: true
+  base-ref:
+    description: 'PRのbaseブランチ名'
+    required: false
+    default: 'main' 
 
 runs:
   using: 'composite'
   steps:
-    - name: Fetch main branch
-      shell: bash
-      run: |
-        git fetch origin main
-
     - name: Detect branch type
       id: branch
       shell: bash
@@ -52,8 +51,10 @@ runs:
         REQUIRED="${{ steps.branch.outputs.required }}"
         HEAD_REF="${{ inputs.branch }}"
 
-        # mainとの差分でPRに追加されたchangesetのみカウント
-        CHANGESET_COUNT=$(git diff origin/main...HEAD --name-only -- '.changeset/*.md' | grep -v 'README.md' | wc -l)
+        # PRのbase branchとの差分でchangesetをカウント
+        BASE_REF="${{ inputs.base-ref }}"
+        git fetch origin "$BASE_REF"
+        CHANGESET_COUNT=$(git diff "origin/${BASE_REF}...HEAD" --name-only -- '.changeset/*.md' | grep -v 'README.md' | wc -l)
 
         if [ "$CHANGESET_COUNT" -gt 0 ]; then
           echo "✅ changeset が見つかりました（${CHANGESET_COUNT}件）"
