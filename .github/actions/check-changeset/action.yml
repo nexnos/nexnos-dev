@@ -9,6 +9,11 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Fetch main branch
+      shell: bash
+      run: |
+        git fetch origin main
+
     - name: Detect branch type
       id: branch
       shell: bash
