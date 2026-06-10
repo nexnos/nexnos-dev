@@ -1,0 +1,64 @@
+name: 'Check Changeset'
+description: 'changesetファイルの存在確認'
+
+inputs:
+  branch:
+    description: 'PRのheadブランチ名'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Detect branch type
+      id: branch
+      shell: bash
+      run: |
+        HEAD_REF="${{ inputs.branch }}"
+
+        # release/ ブランチはスキップ
+        if [[ "$HEAD_REF" == release/* ]]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+          echo "required=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # style・test・chore・ci ブランチはスキップ
+        if [[ "$HEAD_REF" =~ ^(style|test|chore|ci)/ ]]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+          echo "required=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # docs・refactor ブランチは任意
+        if [[ "$HEAD_REF" =~ ^(docs|refactor)/ ]]; then
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "required=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # feat・fix・hotfix・perf・build・revert ブランチは必須
+        echo "skip=false" >> $GITHUB_OUTPUT
+        echo "required=true" >> $GITHUB_OUTPUT
+
+    - name: Check changeset exists
+      if: steps.branch.outputs.skip != 'true'
+      shell: bash
+      run: |
+        REQUIRED="${{ steps.branch.outputs.required }}"
+        HEAD_REF="${{ inputs.branch }}"
+
+        # .changeset/ 以下に設定ファイル以外の .md ファイルがあるか確認
+        CHANGESET_COUNT=$(find .changeset -name "*.md" ! -name "README.md" | wc -l)
+
+        if [ "$CHANGESET_COUNT" -gt 0 ]; then
+          echo "✅ changeset が見つかりました（${CHANGESET_COUNT}件）"
+          exit 0
+        fi
+
+        if [ "$REQUIRED" = "true" ]; then
+          echo "::error::changesetファイルが見つかりません。pnpm changeset を実行してください。"
+          echo "::error::ブランチ: ${HEAD_REF}"
+          exit 1
+        else
+          echo "::warning::changesetファイルがありません。docs/・refactor/ ブランチは任意ですが、CHANGELOGへの記載が必要な場合は pnpm changeset を実行してください。"
+        fi
