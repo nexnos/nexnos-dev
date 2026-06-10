@@ -47,8 +47,8 @@ runs:
         REQUIRED="${{ steps.branch.outputs.required }}"
         HEAD_REF="${{ inputs.branch }}"
 
-        # .changeset/ 以下に設定ファイル以外の .md ファイルがあるか確認
-        CHANGESET_COUNT=$(find .changeset -name "*.md" ! -name "README.md" | wc -l)
+        # mainとの差分でPRに追加されたchangesetのみカウント
+        CHANGESET_COUNT=$(git diff origin/main...HEAD --name-only -- '.changeset/*.md' | grep -v 'README.md' | wc -l)
 
         if [ "$CHANGESET_COUNT" -gt 0 ]; then
           echo "✅ changeset が見つかりました（${CHANGESET_COUNT}件）"
